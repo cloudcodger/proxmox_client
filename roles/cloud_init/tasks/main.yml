@@ -1,0 +1,90 @@
+---
+# tasks file for cloud_init
+
+- name: Construct cloud_init_vms list
+  ansible.builtin.set_fact:
+    vms:
+      name: "{{ cloud_init_construct_ctrl_prefix if
+        item < cloud_init_construct_controllers else cloud_init_construct_work_prefix
+        }}{{ item + 1 if item < cloud_init_construct_controllers
+        else item + 1 - cloud_init_construct_controllers }}"
+      control: "{{ true if item < cloud_init_construct_controllers else false }}"
+      genesis: "{{ omit if item > 0 else true }}"
+      ip: "{{ cloud_init_construct_cidr_start | ansible.utils.ipmath(item)
+        }}/{{ cloud_init_construct_cidr_start | split('/') | last }}"
+      ip6: "{{ omit if cloud_init_construct_cidr6_start == ''
+        else '%s/%s' | format(cloud_init_construct_cidr6_start | default('0.0.0.0/24')
+        | ansible.utils.ipmath(item), cloud_init_construct_cidr6_start | split('/') | last)
+        }}"
+      pm_host: "{{ cloud_init_construct_hosts[item % cloud_init_construct_hosts | length] }}"
+      vmid: "{{ '%03d' | format(cloud_init_construct_vmid_start + item) }}"
+  register: generated_vms
+  loop: "{{ range(0, cloud_init_construct_controllers + cloud_init_construct_workers) | list }}"
+
+- name: Combine constructed virtual machines and cloud_init_vms.
+  ansible.builtin.set_fact:
+    combined_vms: "{{ cloud_init_vms + generated_vms.results
+      | map(attribute='ansible_facts.vms') }}"
+
+- name: Create Virtual Machines
+  community.general.proxmox_kvm:
+    api_host: "{{ cloud_init_pm_api_host }}"
+    api_user: "{{ cloud_init_pm_api_user }}"
+    api_token_id: "{{ cloud_init_pm_api_token_name }}"
+    api_token_secret: "{{ cloud_init_pm_api_token_secret }}"
+
+    cores: "{{ cloud_init_ctrl_cores if item.control else cloud_init_work_cores }}"
+    ide:
+      ide2: "{{ cloud_init_disk_storage }}:cloudinit"
+    ipconfig:
+      ipconfig0: "ip={{ item.ip }}{{ cloud_init_ip_network_gw }}{{
+        ',ip6=' + item.ip6 + cloud_init_ip_network_gw6 if item.ip6 is defined }}"
+    memory: "{{ cloud_init_ctrl_memory if item.control else cloud_init_work_memory }}"
+    name: "{{ item.name }}"
+    nameservers: "{{ cloud_init_nameservers }}"
+    net:
+      net0: "virtio,bridge={{ cloud_init_network_bridge }}{{ cloud_init_ip_vlan }}"
+    node: "{{ item.pm_host | default(cloud_init_pm_host) }}"
+    searchdomains: "{{ cloud_init_searchdomains }}"
+    serial:
+      serial0: "socket"
+    scsi:
+      scsi0: "{{ item.storage | default(cloud_init_storage)
+        }}:0,format=raw,{{ cloud_init_import_from }}"
+    scsihw: "virtio-scsi-pci"
+    sshkeys: "{{ omit if cloud_init_sshkeys == '' else cloud_init_sshkeys }}"
+    sockets: "{{ cloud_init_ctrl_sockets if item.control else cloud_init_work_sockets }}"
+    state: "present"
+    storage: "{{ item.storage | default(cloud_init_storage) }}"
+    tags: "{{ cloud_init_genesis_tags if item.genesis is defined and item.genesis
+      else cloud_init_ctrl_tags if item.control else cloud_init_work_tags }}"
+    timeout: 300
+    vga: "serial0"
+    vmid: "{{ cloud_init_vlan_tag + item.vmid }}"
+  loop: "{{ combined_vms }}"
+
+- name: Resize the disk for the Virtual Machines
+  community.general.proxmox_disk:
+    api_host: "{{ cloud_init_pm_api_host }}"
+    api_user: "{{ cloud_init_pm_api_user }}"
+    api_token_id: "{{ cloud_init_pm_api_token_name }}"
+    api_token_secret: "{{ cloud_init_pm_api_token_secret }}"
+
+    disk: "scsi0"
+    size: "{{ cloud_init_ctrl_disk_size if item.control else cloud_init_work_disk_size }}"
+    state: "resized"
+    vmid: "{{ cloud_init_vlan_tag + item.vmid }}"
+  loop: "{{ combined_vms }}"
+
+- name: Start the Virtual Machines
+  community.general.proxmox_kvm:
+    api_host: "{{ cloud_init_pm_api_host }}"
+    api_user: "{{ cloud_init_pm_api_user }}"
+    api_token_id: "{{ cloud_init_pm_api_token_name }}"
+    api_token_secret: "{{ cloud_init_pm_api_token_secret }}"
+    state: "started"
+    vmid: "{{ cloud_init_vlan_tag + item.vmid }}"
+  loop: "{{ combined_vms }}"
+  loop_control:
+    label: "{{ item.name }}"
+    pause: "{{ cloud_init_startup_pause }}"

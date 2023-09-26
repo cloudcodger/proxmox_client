@@ -1,0 +1,28 @@
+---
+namespace: cloudcodger
+name: proxmox_client
+version: 1.0.0
+readme: README.md
+authors:
+  - Cloud Codger <cloudcodger@pm.me>
+
+description: Proxmox Client creation roles
+
+license:
+  - GPL-2.0-or-later
+
+tags:
+  - 'cluster'
+  - 'infrastructure'
+  - 'kvm'
+  - 'lxc'
+  - 'proxmox'
+  - 'pve'
+  - 'virtualization'
+
+dependencies: {}
+repository: https://github.com/cloudcodger/proxmox_client
+documentation: https://github.com/cloudcodger/proxmox_client
+homepage: https://github.com/cloudcodger/proxmox_client
+issues: https://github.com/cloudcodger/proxmox_client/issues
+build_ignore: []
