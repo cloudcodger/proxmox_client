@@ -35,6 +35,7 @@
     disk: "{{ item.storage | default(lxc_storage) }}:{{ lxc_disk_size }}"
     hostname: "{{ item.name }}"
     memory: "{{ lxc_memory }}"
+    mounts: "{{ item.mounts | default(omit) }}"
     nameserver: "{{ ' '.join(lxc_nameservers) }}"
     netif:
       net0: "name=eth0,bridge={{ lxc_network_bridge }},ip={{ item.ip | default('dhcp') }}{{ lxc_net0_gw

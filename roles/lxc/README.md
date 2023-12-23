@@ -43,7 +43,7 @@ At a minimum, set the following to desired values.
 ### All variables.
 
 - `lxc_pm_api_host` - Proxmox host for API connection (default: `proxmox_master`)
-- `lxc_lxc_pm_api_user` - Proxmox user for API connection (default: `devops@pve`)
+- `lxc_pm_api_user` - Proxmox user for API connection (default: `devops@pve`)
 - `lxc_pm_api_token_name` - Proxmox user specific API token for API connection (default: `ansible`)
 - `lxc_secrets_dir` - Local directory in which the API Token Secret file is located (default: `~/.pve_tokens`)
 - `lxc_pm_api_token_file` - File name of the API Token Secret
@@ -102,6 +102,7 @@ Required keys:
 Optional keys:
 
 - `ip6` - Static IPv6 address (in CIDR notation).
+- `mounts` - A list of optional mounts for this container in the format of a hash. See the first example.
 - `pm_host` - Overrides the global value for `pm_host` for this container.
 - `storage` - Overrides the global value for this container.
 - `tags` - Combined with the global value for this container.
@@ -131,6 +132,8 @@ Example Playbooks
       lxc_cts:
         - name: "testerct1"
           ip: "192.168.6.219/24"
+          mounts:
+            mp0: "local-lvm:400,mp=/mnt_point/"
           vmid: "219"
 ```
 
