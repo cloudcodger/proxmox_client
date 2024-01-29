@@ -93,6 +93,7 @@ At a minimum, set the following to desired values.
 - `cloud_init_work_memory` - The memory size for VMs with `control: false` (default: `8192`).
 - `cloud_init_work_sockets` - The number of CPUs for VMs with `control: false` (default: `1`).
 - `cloud_init_work_tags` - A list of Proxmox tags assigned to VMs with `control: false` (default: `worker,{{ cloud_init_k8s_tags }}`).
+- `cloud_init_custom` - The default `cicustom` string for all VMs (default `''`) [See note below].
 - `cloud_init_disk_storage` - The storage for holding the VMs cloud-init disks (default: `local`).
 - `cloud_init_image` - Name of the Cloud-Init disk image file for all VMs (default: `ubuntu-22.04-server.qcow2`) [See note below].
 - `cloud_init_image_storage` - The storage containing the Cloud-Init image (default: `local`) [See note below].
@@ -120,6 +121,15 @@ The cloud-init image must exist on every host where a VM will be created. Becaus
 
 Hint: The Ansible Collection [cloudcodger.proxmox_openssh](https://galaxy.ansible.com/cloudcodger/proxmox_openssh) contains two roles that can be used to create the directory, set the content, and upload images to all the hosts in a cluster.
 
+### `cloud_init_custom`
+
+This allows for custom settings to be specied for the VMs using the [Custom Cloud-Init Configuration](https://pve.proxmox.com/wiki/Cloud-Init_Support#_custom_cloud_init_configuration). The command `man qm` on a Proxmox host will provide more information on the `cicustom` parameter to the `qm create` command, which this sets.
+An example value would be `vendor=configs:snippets/vendor-data.yml`.
+
+Usage observation: When using the `cicustom` option with a value like `user=local:snippets/user-data.yml`, it will override _all_ the user data values that normally get set for the VM. One of those values is `hostname`. If you do not include `hostname` in the snippet file the VM will not get the name of the VM like the default behavior provides. If you include `hostname` in the snippet file, then every VM using the same snippet will get the same hostname. To get around this, each VM would require a unique snippet. Alternatively, if you want to keep all the default user data, use a `vendor=` value instead.
+
+Hint: The Ansible Collection [cloudcodger.proxmox_openssh](https://galaxy.ansible.com/cloudcodger/proxmox_openssh) contains the `proxmox_snippet` role that can be used to create a snippet to use here.
+
 ### `cloud_init_vms`
 
 This variable must be a list of hashs that contain specific key/value pairs defining the VMs to create. Because many values must be unique among all containers and VMs within a Proxmox Datacenter, several of these are required and do not have default values.
@@ -136,6 +146,7 @@ Required keys:
 
 Optional keys:
 
+- `custom` - Overrides the global value for this machine. (See comment above for `cloud_init_custom`).
 - `genesis` - Tag with `cloud_init_genesis_tags`.
   Used for kubernetes clustering in other places.
   Intended to only be set to `true` on at most one VM and normally on a VM where `control: true`.

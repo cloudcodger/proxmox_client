@@ -33,6 +33,7 @@
     api_token_id: "{{ cloud_init_pm_api_token_name }}"
     api_token_secret: "{{ cloud_init_pm_api_token_secret }}"
 
+    cicustom: "{{ item.custom | default(omit if cloud_init_custom == '' else cloud_init_custom) }}"
     cores: "{{ cloud_init_ctrl_cores if item.control else cloud_init_work_cores }}"
     ide:
       ide2: "{{ cloud_init_disk_storage }}:cloudinit"
