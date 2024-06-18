@@ -34,6 +34,7 @@
     cpus: "{{ lxc_cpus }}"
     disk: "{{ item.storage | default(lxc_storage) }}:{{ lxc_disk_size }}"
     hostname: "{{ item.name }}"
+    features: "{{ lxc_features }}"
     memory: "{{ lxc_memory }}"
     mounts: "{{ item.mounts | default(omit) }}"
     nameserver: "{{ ' '.join(lxc_nameservers) }}"

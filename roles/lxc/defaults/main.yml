@@ -73,6 +73,10 @@ lxc_cpus: "1"
 # The size of the root disk for each container (in GB).
 lxc_disk_size: "9"
 
+# A list of features, current possible features are;
+# `force_rw_sys`, `fuse`, `keyctl`, `mknod`, `mount` and `nesting`.
+lxc_features: []
+
 # The amount of memory for each container (in KB).
 lxc_memory: "1024"
 
@@ -96,7 +100,7 @@ lxc_template: "ubuntu-22.04-standard_22.04-1_amd64.tar.zst"
 lxc_template_storage: 'local'
 
 # The unprevileged setting for all containers.
-lxc_unprivileged: false
+lxc_unprivileged: true
 
 # A list of name servers for the containers.
 lxc_nameservers: []

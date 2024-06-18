@@ -64,13 +64,15 @@ At a minimum, set the following to desired values.
 - `lxc_cores` - The number of CPU Cores for all containers (default: `4`).
 - `lxc_cpus` - The number of CPUs (sockets) for all containers (default: `1`).
 - `lxc_disk_size` - The size of the root disk for containers (default: `9` in GB).
+- `lxc_features` - A list of LXC features (default: `[]`).
+  See "features" under [Options](https://pve.proxmox.com/wiki/Linux_Container#pct_options).
 - `lxc_memory` - The memory size for all containers (default: `1024` in MB).
 - `lxc_storage` - The storage for all container disks (default: `local-thin`).
 - `lxc_swap` - The size allocated to swap on all containers (default: `0`).
 - `lxc_tags` - A list of Proxmox tags to give all containers (default: `[]`).
 - `lxc_template` - Name of the LXC Container Template (default: `ubuntu-22.04-standard_22.04-1_amd64.tar.zst`).
 - `lxc_template_storage` - The storage containing the above template (default: `local`).
-- `lxc_unprivileged` - Indicate if the container should be unprivileged (default: `false`).
+- `lxc_unprivileged` - Indicate if the container should be unprivileged (default: `true`).
 - `lxc_nameservers` - A list of name servers for the containers (default: `[]`).
 - `lxc_network_bridge` - The bridge network used for all containers (default: `vmbr0`).
 - `lxc_network_gw` - The default gateway used for all containers (default: `192.168.1.1`).
