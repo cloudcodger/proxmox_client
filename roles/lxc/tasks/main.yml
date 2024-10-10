@@ -46,7 +46,6 @@
     pubkey: "{{ omit if lxc_sshkeys == '' else lxc_sshkeys }}"
     searchdomain: "{{ ' '.join(lxc_searchdomains) }}"
     state: "present"
-    storage: "{{ item.storage | default(lxc_storage) }}"
     swap: "{{ lxc_swap }}"
     tags: "{{ lxc_tags + item.tags | default([]) }}"
     unprivileged: "{{ lxc_unprivileged }}"

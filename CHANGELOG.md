@@ -1,5 +1,9 @@
 # Change log
 
+# version 1.3.1
+
+- Removed `storage` from the `lxc` call to `community.general.proxmox` when creating a container.
+
 # version 1.3.0
 
 - Added `features` to the `lxc` (See the `README.md` for the role).
