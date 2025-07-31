@@ -1,6 +1,4 @@
 ---
-# vars file for lxc
-
 lxc_net0_gw: "{{ ',gw=' + lxc_network_gw if lxc_network_gw != '' }}"
 lxc_net0_gw6: "{{ ',gw6=' + lxc_network_gw6 if lxc_network_gw6 is defined }}"
 lxc_net0_vlan: "{{ ',tag=' + lxc_vlan_tag if lxc_vlan_tag != '' }}"

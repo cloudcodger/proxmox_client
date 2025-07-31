@@ -1,6 +1,4 @@
 ---
-# defaults file for lxc
-
 # The values here must be set to use an "API Token".
 # The user and token must also have the permissions needed to perform all tasks.
 lxc_pm_api_host: 'proxmox_master'
@@ -20,6 +18,27 @@ lxc_pm_api_token_file: "{{ lxc_pm_api_user | replace('@', '-')
 # set multiple `lxc_construct_*` values.
 # Both of these can be set and will create all the containers desired but
 # may also confuse anyone reading your playbook and is discouraged.
+
+# Set the `ansible_host` variable in the `host_vars` file.
+lxc_ansible_host: false
+
+# The paths on the control host where the `host_vars` directory can be found.
+# The default will look next to one of the Inventory sources and
+# then in the parent directory of the first Inventory source.
+# Set this to any other paths if you use a `host_vars` in a unique location.
+lxc_ansible_host_vars_paths:
+  - "{{ ansible_inventory_sources }}"
+  - "{{ ansible_inventory_sources[0] | dirname }}"
+
+# Directory containing the individual host_vars files.
+lxc_ansible_host_vars_dir: "{{ lookup('ansible.builtin.first_found',
+  'host_vars',
+  paths=lxc_ansible_host_vars_paths) }}"
+
+# Perform a refresh_inventory after
+# 1) creating an LXC container
+# 2) starting an LXC container and the local 'host_vars' was changed.
+lxc_ansible_inventory_refresh: "{{ lxc_ansible_host }}"
 
 # Providing a list of dicts for the containers to create.
 # Each list item must contain a set of required and possibly optional keys.
@@ -80,6 +99,29 @@ lxc_features: []
 # The amount of memory for each container (in KB).
 lxc_memory: "1024"
 
+# A list of name servers for the containers.
+lxc_nameservers: []
+
+# The network bridge to be used for each container.
+# All Proxmox clusters contain a `vmbr0` network bridge by default.
+lxc_network_bridge: "vmbr0"
+
+# The role only supports creating all containers on the same subnet and
+# using the same default gateway.
+lxc_network_gw: ''
+
+# The Proxmox Host on which containers are created by default.
+# Override this for individual items in the `containers` list.
+# See the comment for `lxc_construct_hosts` above for a construct.
+lxc_pm_host: "{{ lxc_pm_api_host }}"
+
+# A list of search domains for DNS lookups.
+lxc_searchdomains: []
+
+# WARNING! There is no default value here,
+# and leaving this empty will result in containers to which you cannot login!
+lxc_sshkeys: ''
+
 # Where to place the disk for each container created.
 # This storage _must_ exist on each host on which containers are created and
 # be configured to support the "Container" content type.
@@ -101,29 +143,6 @@ lxc_template_storage: 'local'
 
 # The unprevileged setting for all containers.
 lxc_unprivileged: true
-
-# A list of name servers for the containers.
-lxc_nameservers: []
-
-# The network bridge to be used for each container.
-# All Proxmox clusters contain a `vmbr0` network bridge by default.
-lxc_network_bridge: "vmbr0"
-
-# The role only supports creating all containers on the same subnet and
-# using the same default gateway.
-lxc_network_gw: '192.168.1.1'
-
-# The Proxmox Host on which containers are created by default.
-# Override this for individual items in the `containers` list.
-# See the comment for `lxc_construct_hosts` above for a construct.
-lxc_pm_host: "{{ lxc_pm_api_host }}"
-
-# A list of search domains for DNS lookups.
-lxc_searchdomains: []
-
-# WARNING! There is no default value here,
-# and leaving this empty will result in containers to which you cannot login!
-lxc_sshkeys: ''
 
 # Make sure this is set to '', if there is no VLAN.
 # This value will also be prepended to all VMID values.

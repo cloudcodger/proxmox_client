@@ -42,45 +42,166 @@ At a minimum, set the following to desired values.
 
 ### All variables.
 
-- `lxc_pm_api_host` - Proxmox host for API connection (default: `proxmox_master`)
-- `lxc_pm_api_user` - Proxmox user for API connection (default: `devops@pve`)
-- `lxc_pm_api_token_name` - Proxmox user specific API token for API connection (default: `ansible`)
-- `lxc_secrets_dir` - Local directory in which the API Token Secret file is located (default: `~/.pve_tokens`)
-- `lxc_pm_api_token_file` - File name of the API Token Secret
-  The default is to construct this value from the `lxc_pm_api_user` and `pm_api_token`, replacing the `@` with `-`.
-  For example, `devops-pve-ansible` from the above default values.
-- `lxc_pm_api_token_secret` - Read from the above file be default.
-  Caution! Setting this directly may accidentally expose the value.
-- `lxc_cts` - See the sub-section below for details (default: `[]`)
-- `lxc_construct_cidr_start` - The first IPv4 address in CIDR notation.
-- `lxc_construct_cidr6_start` - The first IPv6 address in CIDR notation.
-- `lxc_construct_container_prefix` - The name of all containers with an index number appended (default: `new_container`)
-- `lxc_construct_containers` - The number of containers to create (default: `0`)
-- `lxc_construct_ct0_tags` - Special tags to add to the first and only the first container in the construct list (default: `[]`).
-- `lxc_construct_hosts` - A list of Proxmox host names on which to create the containers (default `[]`).
-  Containers get created by repeatedly looping over this list to set `pm_host` for each one.
-  For example, if the total number of containers to be created is 12 and there are 3 hosts in this list, each host would end up with 4 containers created on it.
-- `lxc_construct_vmid_start` - The VMID for the first VM and incremented for each one following it.
-- `lxc_cores` - The number of CPU Cores for all containers (default: `4`).
-- `lxc_cpus` - The number of CPUs (sockets) for all containers (default: `1`).
-- `lxc_disk_size` - The size of the root disk for containers (default: `9` in GB).
-- `lxc_features` - A list of LXC features (default: `[]`).
-  See "features" under [Options](https://pve.proxmox.com/wiki/Linux_Container#pct_options).
-- `lxc_memory` - The memory size for all containers (default: `1024` in MB).
-- `lxc_storage` - The storage for all container disks (default: `local-thin`).
-- `lxc_swap` - The size allocated to swap on all containers (default: `0`).
-- `lxc_tags` - A list of Proxmox tags to give all containers (default: `[]`).
-- `lxc_template` - Name of the LXC Container Template (default: `ubuntu-22.04-standard_22.04-1_amd64.tar.zst`).
-- `lxc_template_storage` - The storage containing the above template (default: `local`).
-- `lxc_unprivileged` - Indicate if the container should be unprivileged (default: `true`).
-- `lxc_nameservers` - A list of name servers for the containers (default: `[]`).
-- `lxc_network_bridge` - The bridge network used for all containers (default: `vmbr0`).
-- `lxc_network_gw` - The default gateway used for all containers (default: `192.168.1.1`).
-- `lxc_network_gw6` - The default IPv6 gateway (default: unset).
-- `lxc_pm_host` - The default Proxmox host on which to create all the containers (defualt: `{{ lxc_pm_api_host }}`).
-- `lxc_searchdomains` - A list of domains to search for DNS resolution (default: `[]`).
-- `lxc_sshkeys` - A multi-line string containing a list of public SSH keys for the `root` user login on all containers (No default. See `pubkey` variable for the [community.general.proxmox](https://docs.ansible.com/ansible/latest/collections/community/general/proxmox_module.html) module).
-- `lxc_vlan_tag` - A VLAN tag number for all VM networks that also gets prepended to VMIDs (default: `''`).
+- `lxc_pm_api_host`
+  - Proxmox host for API connection.
+  - Default: `proxmox_master`.
+
+- `lxc_pm_api_user`
+  - Proxmox user for API connection.
+  - Default: `devops@pve`.
+
+- `lxc_pm_api_token_name`
+  - Proxmox user specific API token for API connection.
+  - Default: `ansible`.
+
+- `lxc_secrets_dir`
+  - Local directory in which the API Token Secret file is located.
+  - Default: `~/.pve_tokens`.
+
+- `lxc_pm_api_token_file`
+  - File name of the API Token Secret.
+  - Default is to construct this value from the `lxc_pm_api_user` and `pm_api_token`,
+    replacing the `@` with `-`.
+    For example, `devops-pve-ansible` from the above default values.
+
+- `lxc_pm_api_token_secret`
+  - PVE API token secrect.
+  - Default: Read it from `lxc_pm_api_token_file`.
+    Caution! Setting this directly may accidentally expose the value.
+
+- `lxc_ansible_host`
+  - Add the `ansible_host` variable to the `host_vars` file for this guest.
+  - Default: `false`, for backward compatibility.
+  - When creating LXC containers that use DHCP, it can be difficult to get the IP address assigned. This allows the role to set `ansible_host` to the IP address of the guest.
+
+- `lxc_ansible_host_vars_paths`
+  - List of directory paths in which to look for `host_vars`.
+  - Default:
+    - "{{ ansible_inventory_sources }}"
+    - "{{ ansible_inventory_sources[0] | dirname }}"
+  - This should work for most use cases.
+
+- `lxc_ansible_host_vars_dir`
+  - The `host_vars` directory.
+  - Default: The first `host_vars` directory found in `lxc_ansible_host_vars_paths`.
+
+- `lxc_ansible_inventory_refresh`
+  - Perform `meta: refresh_inventory` when new LXC containers are started.
+  - Default: `"{{ lxc_ansible_host }}"`, which assumes that this will usually be `true` when `lxc_ansible_host` is set to `true`.
+  - When calling this role in a playbook followed by another play to configure the LXC containers, a newly created host will not be found in the inventory unless this is done.
+
+- `lxc_cts`
+  - List of LXC containers to create.
+  - See the sub-section below for details.
+  - Default: `[]`, does not create any LXC containers.
+
+- `lxc_construct_cidr_start`
+  - The first IPv4 address in CIDR notation.
+  - Default: `omit`, allowing all containers to use DHCP.
+
+- `lxc_construct_cidr6_start`
+  - The first IPv6 address in CIDR notation.
+  - Default: `omit`.
+
+- `lxc_construct_container_prefix`
+  - The name of all containers with an index number appended.
+  - Default: `new_container`.
+
+- `lxc_construct_containers`
+  - The number of containers to create.
+  - Default: `0`.
+
+- `lxc_construct_ct0_tags`
+  - Special tags to add to the first and only the first container in the construct list.
+  - Default: `[]`.
+
+- `lxc_construct_hosts`
+  - A list of Proxmox host names on which to create the containers.
+  - Default `[]`.
+  - Containers get created by repeatedly looping over this list to set `pm_host` for each one.
+    For example, if the total number of containers to be created is 12 and there are 3 hosts in this list, each host would end up with 4 containers.
+
+- `lxc_construct_vmid_start`
+  - The VMID for the first VM and incremented for each one following it.
+  - Default: `0`, Let Proxmox VE assign the next available VMID.
+
+- `lxc_cores`
+  - The number of CPU Cores for all containers.
+  - Default: `4`.
+
+- `lxc_cpus`
+  - The number of CPUs (sockets) for all containers.
+  - Default: `1`.
+
+- `lxc_disk_size`
+  - The size of the root disk for containers.
+  - Default: `9` in GB.
+
+- `lxc_features`
+  - A list of LXC features.
+  - Default: `[]`.
+  - See "features" under [Options](https://pve.proxmox.com/wiki/Linux_Container#pct_options).
+
+- `lxc_memory`
+  - The memory size for all containers.
+  - Default: `1024` in MB.
+
+- `lxc_storage`
+  - The storage for all container disks.
+  - Default: `local-thin`.
+
+- `lxc_swap`
+  - The size allocated to swap on all containers.
+  - Default: `0`.
+
+- `lxc_tags`
+  - A list of Proxmox tags to give all containers.
+  - Default: `[]`.
+
+- `lxc_template`
+  - Name of the LXC Container Template.
+  - Default: `ubuntu-22.04-standard_22.04-1_amd64.tar.zst`.
+
+- `lxc_template_storage`
+  - The storage containing the above template.
+  - Default: `local`.
+
+- `lxc_unprivileged`
+  - Indicate if the container should be unprivileged.
+  - Default: `true`.
+
+- `lxc_nameservers`
+  - A list of name servers for the containers.
+  - Default: `[]`.
+
+- `lxc_network_bridge`
+  - The bridge network used for all containers.
+  - Default: `vmbr0`.
+
+- `lxc_network_gw`
+  - The default gateway used for all containers.
+  - Default: `''`.
+
+- `lxc_network_gw6`
+  - The default IPv6 gateway.
+  - Default: unset.
+
+- `lxc_pm_host`
+  - The default Proxmox host on which to create all the containers.
+  - Defualt: `{{ lxc_pm_api_host }}`.
+
+- `lxc_searchdomains`
+  - A list of domains to search for DNS resolution.
+  - Default: `[]`.
+
+- `lxc_sshkeys`
+  - A multi-line string containing a list of public SSH keys for the `root` user login on all containers.
+  - Default: none.
+  - See `pubkey` variable for the [community.general.proxmox](https://docs.ansible.com/ansible/latest/collections/community/general/proxmox_module.html) module).
+
+- `lxc_vlan_tag`
+  - A VLAN tag number for all VM networks that also gets prepended to VMIDs.
+  - Default: `''`.
 
 Special Variable Notes
 ----------------------
@@ -98,16 +219,16 @@ This variable must be a list of hashs that contain specific key/value pairs defi
 Required keys:
 
 - `name` - The name of the VM and becomes the hostname of the system.
-- `ip` - Static IPv4 address (in CIDR notation) or `dhcp`.
-- `vmid` - A _unique_ VMID number within the Datacenter.
 
 Optional keys:
 
+- `ip` - Static IPv4 address (in CIDR notation) or `dhcp`.
 - `ip6` - Static IPv6 address (in CIDR notation).
 - `mounts` - A list of optional mounts for this container in the format of a hash. See the first example.
 - `pm_host` - Overrides the global value for `pm_host` for this container.
 - `storage` - Overrides the global value for this container.
 - `tags` - Combined with the global value for this container.
+- `vmid` - A _unique_ VMID number within the Datacenter.
 
 Dependencies
 ------------

@@ -1,20 +1,19 @@
 ---
-# tasks file for lxc
-
 - name: Construct containers list
   ansible.builtin.set_fact:
     cts:
       name: "{{ lxc_construct_container_prefix }}{{ item + 1 }}"
-      ip: "{{ lxc_construct_cidr_start | ansible.utils.ipmath(item)
-        }}/{{ lxc_construct_cidr_start | split('/') | last }}"
+      ip: "{{ omit if lxc_construct_cidr_start == ''
+        else lxc_construct_cidr_start | ansible.utils.ipmath(item) + '/' +
+        lxc_construct_cidr_start | split('/') | last }}"
       ip6: "{{ omit if lxc_construct_cidr6_start == ''
         else '%s/%s' | format(lxc_construct_cidr6_start | default('0.0.0.0/24')
         | ansible.utils.ipmath(item), lxc_construct_cidr6_start | split('/') | last)
         }}"
-      pm_host: "{{ lxc_construct_hosts[item % lxc_construct_hosts | length] }}"
+      pm_host: "{{ omit if not lxc_construct_hosts else lxc_construct_hosts[item % lxc_construct_hosts | length] }}"
       tags: "{{ lxc_construct_ct0_tags if lxc_construct_ct0_tags and item < 1 else
         omit }}"
-      vmid: "{{ '%03d' | format(lxc_construct_vmid_start + item) }}"
+      vmid: "{{ omit if lxc_construct_vmid_start == 0 else '%03d' | format(lxc_construct_vmid_start + item) }}"
   register: generated_lxcs
   loop: "{{ range(0, lxc_construct_containers) | list }}"
 
@@ -49,8 +48,10 @@
     swap: "{{ lxc_swap }}"
     tags: "{{ lxc_tags + item.tags | default([]) }}"
     unprivileged: "{{ lxc_unprivileged }}"
-    vmid: "{{ item.vmid }}"
+    vmid: "{{ item.vmid | default(omit) }}"
   loop: "{{ combined_lxcs }}"
+  notify: inventory refresh
+  register: lxc_containers
 
 - name: Start LXC container
   community.general.proxmox:
@@ -62,6 +63,20 @@
     state: "started"
     unprivileged: "{{ lxc_unprivileged }}"
     vmid: "{{ item.vmid }}"
-  loop: "{{ combined_lxcs }}"
+  loop: "{{ lxc_containers.results }}"
   loop_control:
-    label: "{{ item.name }}"
+    label: "{{ item.item.name }}"
+  register: lxc_starts
+
+- name: Include the Host IP tasks.
+  ansible.builtin.include_tasks: host-ip.yml
+  loop: "{{ lxc_starts.results }}"
+  loop_control:
+    label: "{{ loop_ct.item.item.name }}"
+    loop_var: loop_ct
+  when:
+    - lxc_ansible_host
+    - loop_ct.changed
+
+- name: Flush handlers.
+  meta: flush_handlers
