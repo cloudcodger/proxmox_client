@@ -1,5 +1,9 @@
 # Change log
 
+# version 1.4.1
+
+- Role `lxc` bug fix. Missing default for `pm_host`.
+
 # version 1.4.0
 
 - Role `lxc` changes.

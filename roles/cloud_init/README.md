@@ -1,13 +1,12 @@
 `cloud_init`
 ============
 
-A role to create two distinct sets of identically configured Proxmox virtual machines using the [Cloud-Init Support](https://pve.proxmox.com/wiki/Cloud-Init_Support) provided in [Proxmox VE](https://pve.proxmox.com/wiki/Main_Page).
+A role to create two distinct sets of identically configured (per group) Proxmox virtual machines using the [Cloud-Init Support](https://pve.proxmox.com/wiki/Cloud-Init_Support) provided in [Proxmox VE](https://pve.proxmox.com/wiki/Main_Page).
 
-This role is designed to support the creation of two different groups of VMs as often desired for use with Kubernetes.
-One group for use as control (`ctrl`) nodes and another group for worker (`work`) nodes as seen by the choice in variable naming.
-Although these groups were designed specifically for creating VMs to be used with Kubernetes, they are not limited to this use.
-You could use this for any group of VMs that have two distinct roles for specific systems.
-For example, one VM as the primary DNS server (using `ctrl` variables) with small CPU and memory sizes and three secondary DNS servers (using `work` variables) that have different size requirements.
+This role is designed to support the creation of two different groups of VMs as often desired for use with Kubernetes (k8s).
+One group for use as k8s control (`ctrl`) nodes and another group for k8s worker (`work`) nodes.
+
+Although these groups were designed specifically for creating VMs to be used with k8s, they are not limited to this use. You could use this for any group of VMs that have two distinct roles for specific systems. For example, one VM as the primary DNS server (using `ctrl` variables) with small CPU and memory sizes and three secondary DNS servers (using `work` variables) that have different size requirements.
 
 Each group can have different values for the following items:
 
@@ -17,7 +16,7 @@ Each group can have different values for the following items:
 - disk size
 - Proxmox tags
 
-Different configurations can create;
+Different possible configurations;
 
 - a single VM (recommend using `cloud_init_vms` for this use case)
 - a set of VMs using the `cloud_init_vms` variable
