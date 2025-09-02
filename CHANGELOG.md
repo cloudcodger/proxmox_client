@@ -1,5 +1,29 @@
 # Change log
 
+# version 2.0.0
+
+- Role `cloud_init` changes.
+    - Added `cloud_init_ansible_host*` variables. See `README.md` file.
+    - Added `cloud_init_agent` to enable the QEMU Guest Agent.
+    - Added `cloud_init_ansible_inventory_refresh` to have the role refresh the inventory.
+    - Added `cloud_init_cpu` to set the CPU type.
+    - Added `cloud_init_find_pm_host`. When set to `true`, `cloud_init_pm_host` is set to the PVE node with the least memory in use for each VM created.
+    - Added `cloud_init_tags` for non-construct VMs.
+    - Added task to `wait_for_connection` after start loop to wait until VMs are ready.
+    - Remvoed `cloud_init_startup_pause`.
+    - Removed the default value for `cloud_init_network_gw`.
+    - Changed `cloud_init_construct_vmid_start`.
+    - Changed `cloud_init_image` default to `ubuntu-24.04-server.qcow2`.
+    - Changed `cloud_init_vms`, making the following items optional, `control`, `ip` and `vmid`.
+    - Changed `cloud_init_vms`, adding `description` and `tags` to the optional items.
+    - Changed VM creation to perform all steps for each item before continuing to the next.
+
+- Role `cloud_init` changes.
+    - Added `lxc_find_pm_host`. When set to `true`, `lxc_pm_host` is set to the PVE node with the least memory in use for each CT created.
+    - Added a `wait_for_connection` after start loop to wait until CTs are ready.
+    - Changed default value of `lxc_ansible_inventory_refresh` to `false`.
+    - Changed CT creation to perform all steps for each item before continuing to the next.
+
 # version 1.4.1
 
 - Role `lxc` bug fix. Missing default for `pm_host`.

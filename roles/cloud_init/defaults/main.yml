@@ -1,16 +1,6 @@
 ---
-# defaults file for cloud_init
-
-# Two different groups of VMs can be constructed here.
-# When creating a set of VMs for Kubernetes use, the VMs for
-# the control nodes and the worker nodes can be created using different
-# values dependant on their intended use.
-# The intended use is determined by the `control` key, which is
-# auto-set when using the `cloud_init_construct_*` settings.
-#
-# When creating a set of VMs for a different single use.
-# Either the control settings or the worker settings can be used and
-# just ignoring the other ones.
+# Look at the README.md file for details on the variables.
+# Not all the variables used have default values shown here.
 
 # The values here must be set to use an "API Token".
 # The user and token must also have the permissions needed to perform all tasks.
@@ -19,138 +9,53 @@ cloud_init_pm_api_user: 'devops@pve'
 cloud_init_pm_api_token_name: 'ansible'
 
 # In order to protect the API Token Secret, it will by default
-# be read from a file under the calling users $HOME directory.
-# For example, using the above `cloud_init_pm_api_user` and `pm_api_token` will produce
-# the file `$HOME/.pve_tokens/devops-pve-ansible.token`.
+# be read from a file under the calling users $HOME directory on the control host.
+# For example, using the above `cloud_init_pm_api_user` and `pm_api_token`
+# will produce the file `$HOME/.pve_tokens/devops-pve-ansible.token`.
 cloud_init_secrets_dir: "{{ lookup('env', 'HOME') }}/.pve_tokens"
 cloud_init_pm_api_token_file: "{{ cloud_init_pm_api_user | replace('@', '-')
   }}-{{ cloud_init_pm_api_token_name }}.token"
 
-# By default, calling this role will not create any VMs.
-# You must either provide a `cloud_init_vms` list or
-# set multiple `cloud_init_construct_*` values.
-# Both of these can be set and will create all the VMs desired but
-# may also confuse anyone reading your playbook and is discouraged.
+cloud_init_agent: false
+cloud_init_ansible_host: false
+cloud_init_ansible_host_vars_paths:
+  - "{{ ansible_inventory_sources }}"
+  - "{{ ansible_inventory_sources[0] | dirname }}"
+cloud_init_ansible_host_vars_dir: "{{ lookup('ansible.builtin.first_found',
+  'host_vars',
+  paths=cloud_init_ansible_host_vars_paths) }}"
+cloud_init_ansible_inventory_refresh: "{{ cloud_init_ansible_host }}"
 
-# Providing a list of dicts for the VMs to create.
-# Each list item must contain a set of required and possibly optional keys.
-# Required list item keys:
-# - name: The name of the VM and becomes the hostname of the system
-# - control: If this is a control plane node (others will be worker nodes)
-# - ip: Static IPv4 CIDR address
-# - vmid: The VMID for each VM.
-#         Automatically selecting the next available value is not supported.
-#         The `cloud_init_vlan_tag` is prepended to this value.
-#         Each MUST be unique within the Datacenter.
-# Optional list item keys:
-# - cloudinit_storage: Override the global value
-# - genesis: Only set this to true on one item (default: false)
-# - ip6: Static IPv6 CIDR address (default: unset)
-# - pm_host: Override the global value
-# - storage: Override the global value
-cloud_init_vms: []
-
-# Providing values to construct the list of VMs to create.
-# WARNING: When _both_ `cloud_init_construct_controllers` and `cloud_init_construct_workers`
-# are greater than 0, never change the value of `cloud_init_construct_controllers`
-# after the playbook has been run the first time.
-
-# The starting IPv4 address in CIDR notation
-cloud_init_construct_cidr_start: ""
-# The starting IPv6 address in CIDR notation, disabled when not set
-cloud_init_construct_cidr6_start: ""
-# Begining part of each control node hostname, a sequencial number is appended.
-cloud_init_construct_ctrl_prefix: "ctrl"
-# The number of VMs to create using the 'control_*' values
 cloud_init_construct_controllers: 0
-# A list of Proxmox hosts across which the VMs will be created.
-# The VMs are created by looping over this list, putting one on each host
-# listed in a round-robin fashion.
+cloud_init_construct_ctrl_prefix: "ctrl"
 cloud_init_construct_hosts: []
-# Begining part of each work node hostname, a sequencial number is appended.
 cloud_init_construct_work_prefix: "work"
-# The number of VMs to create using the 'worker_*' values
 cloud_init_construct_workers: 0
-# The VMID of the first VM created and incremented for each subsequent VM.
-cloud_init_construct_vmid_start: 0
 
-# Settings for VMs where `control: true`.
 cloud_init_ctrl_cores: '4'
 cloud_init_ctrl_disk_size: '12G'
 cloud_init_ctrl_memory: '8192'
 cloud_init_ctrl_sockets: '1'
 cloud_init_ctrl_tags: ["control", "{{ cloud_init_k8s_tag }}"]
 
-# This will be used instead of `cloud_init_ctrl_tags` when `genesis: true`.
-# Intended to only be set on one VM or none of them.
+cloud_init_disk_storage: 'local'
+cloud_init_find_pm_host: false
 cloud_init_genesis_tags: "control,genesis,{{ cloud_init_k8s_tag }}"
+cloud_init_image: ubuntu-24.04-server.qcow2
+cloud_init_image_storage: local
+cloud_init_k8s_tag: 'k8s'
+cloud_init_nameservers: []
+cloud_init_network_bridge: 'vmbr0'
+cloud_init_pm_host: "{{ cloud_init_pm_api_host }}"
+cloud_init_searchdomains: []
+cloud_init_storage: 'local-thin'
+cloud_init_tags: []
+cloud_init_vmid: '00'
 
-# VMs to be used for the Worker only nodes, will all be configured with like
-# resources in CPUs (sockets), Cores, Memory, and Disk Size.
-# Settings for VMs where `control: false`
+cloud_init_vms: []
+
 cloud_init_work_cores: '2'
 cloud_init_work_disk_size: '12G'
 cloud_init_work_memory: '8192'
 cloud_init_work_sockets: '1'
 cloud_init_work_tags: ["{{ cloud_init_k8s_tag }}", "worker"]
-
-# A string used to set `cicustom` when creating the VMs.
-# NOTICE: Any snippet referenced in the string value must already exist on
-# the host where the VM is being created.
-cloud_init_custom: ''
-
-# The storage for holding all the VMs cloud-init disks.
-# This is not the same as `cloud_init_image_storage` below.
-cloud_init_disk_storage: 'local'
-
-# NOTICE: The specified cloud-init disk image must exists on each Proxmox Host
-# in the Datacenter on which VMs will be created.
-cloud_init_image: 'ubuntu-22.04-server.qcow2'
-cloud_init_image_storage: 'local'
-cloud_init_vmid: '00'
-
-# Added to `cloud_init_ctrl_tags`, `cloud_init_genesis_tags`, and `cloud_init_work_tags`,
-# making it easy to change one value for all three defaults to be updated.
-# To ignore this value, just override the above variables to not include it.
-# See the `README.md` file about tagging of the VMs.
-cloud_init_k8s_tag: 'k8s'
-
-# A list of name servers for the VMs.
-cloud_init_nameservers: []
-
-# The network bridge to be used for each VM.
-# All Proxmox clusters contain a `vmbr0` network bridge by default.
-cloud_init_network_bridge: 'vmbr0'
-
-# The role only supports creating all VMs on the same subnet and
-# using the same default gateway.
-cloud_init_network_gw: '192.168.1.1'
-
-# The Proxmox Host on which VMs are created by default.
-# Override this for individual items in the `cloud_init_vms` list.
-# See the comment for `cloud_init_construct_hosts` above for a construct.
-cloud_init_pm_host: "{{ cloud_init_pm_api_host }}"
-
-# A list of search domains for DNS lookups.
-cloud_init_searchdomains: []
-
-# WARNING! There is no default value here,
-# and leaving this empty will result in VMs to which you cannot login!
-cloud_init_sshkeys: ''
-
-# The number of seconds to "pause" between VMs as they are started.
-# When creating a large number of VMs on a single Proxmox host,
-# starting them up too fast will cause the host to become overloaded
-# and it may become unresponsive or crash.
-cloud_init_startup_pause: 10
-
-# Where to place the disk for each VM created.
-# This storage _must_ exist on each host on which VMs are created and
-# be configured to support the "Disk Image" content type.
-# For a cluster, consider using shared storage for migration support.
-# Common values include: `local`, `local-thin`, `local-zfs` and `ceph0`.
-cloud_init_storage: 'local-thin'
-
-# Make sure this is set to '', if there is no VLAN.
-# This value will also be prepended to all VMID values.
-cloud_init_vlan_tag: ''

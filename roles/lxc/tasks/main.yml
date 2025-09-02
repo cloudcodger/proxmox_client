@@ -1,19 +1,32 @@
 ---
+- name: Make sure that SSH Keys are set.
+  ansible.builtin.assert:
+    that: lxc_sshkeys is defined
+    quiet: true
+
+- name: Make sure that any required constuct values are set.
+  ansible.builtin.assert:
+    that:
+      - lxc_construct_cidr_start is defined
+      - lxc_construct_hosts | length > 0
+    quiet: true
+  when: lxc_construct_containers > 0
+
 - name: Construct containers list
   ansible.builtin.set_fact:
     cts:
       name: "{{ lxc_construct_container_prefix }}{{ item + 1 }}"
-      ip: "{{ omit if lxc_construct_cidr_start == ''
-        else lxc_construct_cidr_start | ansible.utils.ipmath(item) + '/' +
-        lxc_construct_cidr_start | split('/') | last }}"
-      ip6: "{{ omit if lxc_construct_cidr6_start == ''
-        else '%s/%s' | format(lxc_construct_cidr6_start | default('0.0.0.0/24')
-        | ansible.utils.ipmath(item), lxc_construct_cidr6_start | split('/') | last)
-        }}"
+      ip: "{{ lxc_construct_cidr_start | ansible.utils.ipmath(item)
+        }}/{{ lxc_construct_cidr_start | split('/') | last }}"
+      ip6: "{{ '%s/%s' | format(
+        lxc_construct_cidr6_start | default('::/0') | ansible.utils.ipmath(item),
+        lxc_construct_cidr6_start| split('/') | last)
+        if lxc_construct_cidr6_start is defined else omit }}"
       pm_host: "{{ omit if not lxc_construct_hosts else lxc_construct_hosts[item % lxc_construct_hosts | length] }}"
       tags: "{{ lxc_construct_ct0_tags if lxc_construct_ct0_tags and item < 1 else
         omit }}"
-      vmid: "{{ omit if lxc_construct_vmid_start == 0 else '%03d' | format(lxc_construct_vmid_start + item) }}"
+      vmid: "{{ '%03d' | format(lxc_construct_vmid_start + item)
+        if lxc_construct_vmid_start is defined else omit }}"
   register: generated_lxcs
   loop: "{{ range(0, lxc_construct_containers) | list }}"
 
@@ -22,61 +35,18 @@
     combined_lxcs: "{{ lxc_cts + generated_lxcs.results
       | map(attribute='ansible_facts.cts') }}"
 
-- name: Create LXC container.
-  community.general.proxmox:
-    api_host: "{{ lxc_pm_api_host }}"
-    api_user: "{{ lxc_pm_api_user }}"
-    api_token_id: "{{ lxc_pm_api_token_name }}"
-    api_token_secret: "{{ lxc_pm_api_token_secret }}"
-
-    cores: "{{ lxc_cores }}"
-    cpus: "{{ lxc_cpus }}"
-    disk: "{{ item.storage | default(lxc_storage) }}:{{ lxc_disk_size }}"
-    hostname: "{{ item.name }}"
-    features: "{{ lxc_features }}"
-    memory: "{{ lxc_memory }}"
-    mounts: "{{ item.mounts | default(omit) }}"
-    nameserver: "{{ ' '.join(lxc_nameservers) }}"
-    netif:
-      net0: "name=eth0,bridge={{ lxc_network_bridge }},ip={{ item.ip | default('dhcp') }}{{ lxc_net0_gw
-        }}{{ ',ip6=' + item.ip6 + lxc_net0_gw6 if item.ip6 is defined }}{{ lxc_net0_vlan }}"
-    node: "{{ item.pm_host | default(lxc_pm_host) }}"
-    ostemplate: "{{ lxc_template_storage }}:vztmpl/{{ lxc_template }}"
-    pubkey: "{{ omit if lxc_sshkeys == '' else lxc_sshkeys }}"
-    searchdomain: "{{ ' '.join(lxc_searchdomains) }}"
-    state: "present"
-    swap: "{{ lxc_swap }}"
-    tags: "{{ lxc_tags + item.tags | default([]) }}"
-    unprivileged: "{{ lxc_unprivileged }}"
-    vmid: "{{ item.vmid | default(omit) }}"
+- name: Include the creation tasks.
+  ansible.builtin.include_tasks: creator.yml
   loop: "{{ combined_lxcs }}"
-  notify: inventory refresh
-  register: lxc_containers
-
-- name: Start LXC container
-  community.general.proxmox:
-    api_host: "{{ lxc_pm_api_host }}"
-    api_user: "{{ lxc_pm_api_user }}"
-    api_token_id: "{{ lxc_pm_api_token_name }}"
-    api_token_secret: "{{ lxc_pm_api_token_secret }}"
-
-    state: "started"
-    unprivileged: "{{ lxc_unprivileged }}"
-    vmid: "{{ item.vmid }}"
-  loop: "{{ lxc_containers.results }}"
   loop_control:
-    label: "{{ item.item.name }}"
-  register: lxc_starts
-
-- name: Include the Host IP tasks.
-  ansible.builtin.include_tasks: host-ip.yml
-  loop: "{{ lxc_starts.results }}"
-  loop_control:
-    label: "{{ loop_ct.item.item.name }}"
-    loop_var: loop_ct
-  when:
-    - lxc_ansible_host
-    - loop_ct.changed
+    loop_var: creator_item
 
 - name: Flush handlers.
   meta: flush_handlers
+
+- name: Wait for the new systems to be accessible.
+  ansible.builtin.wait_for_connection:
+  delegate_to: "{{ item.name }}"
+  loop: "{{ combined_lxcs }}"
+  loop_control:
+    label: "{{ item.name }}"

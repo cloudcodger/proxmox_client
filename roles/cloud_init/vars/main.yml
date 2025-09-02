@@ -2,9 +2,9 @@
 # vars file for cloud_init
 
 cloud_init_import_from: "import-from={{ cloud_init_image_storage }}:00/{{ cloud_init_image }}"
-cloud_init_ip_network_gw: "{{ ',gw=' + cloud_init_network_gw if cloud_init_network_gw != '' }}"
+cloud_init_ip_network_gw: "{{ ',gw=' + cloud_init_network_gw if cloud_init_network_gw is defined }}"
 cloud_init_ip_network_gw6: "{{ ',gw6=' + cloud_init_network_gw6 if cloud_init_network_gw6 is defined }}"
-cloud_init_ip_vlan: "{{ ',tag=' + cloud_init_vlan_tag if cloud_init_vlan_tag != '' }}"
+cloud_init_ip_vlan: "{{ ',tag=' + cloud_init_vlan_tag if cloud_init_vlan_tag is defined }}"
 
 # Be careful about directly setting this as it may result in the token secret value being leaked in various ways.
 cloud_init_pm_api_token_secret: "{{ lookup('file', '{{ cloud_init_secrets_dir

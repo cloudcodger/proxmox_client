@@ -1,7 +1,7 @@
 ---
-lxc_net0_gw: "{{ ',gw=' + lxc_network_gw if lxc_network_gw != '' }}"
+lxc_net0_gw: "{{ ',gw=' + lxc_network_gw if lxc_network_gw is defined }}"
 lxc_net0_gw6: "{{ ',gw6=' + lxc_network_gw6 if lxc_network_gw6 is defined }}"
-lxc_net0_vlan: "{{ ',tag=' + lxc_vlan_tag if lxc_vlan_tag != '' }}"
+lxc_net0_vlan: "{{ ',tag=' + lxc_vlan_tag if lxc_vlan_tag is defined }}"
 
 # Be careful about directly setting this as it may result in the
 # token secret value being leaked in various ways.

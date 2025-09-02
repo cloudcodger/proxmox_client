@@ -1,0 +1,72 @@
+---
+- name: Get node info.
+  community.general.proxmox_node_info:
+    api_host: "{{ lxc_pm_api_host }}"
+    api_user: "{{ lxc_pm_api_user }}"
+    api_token_id: "{{ lxc_pm_api_token_name }}"
+    api_token_secret: "{{ lxc_pm_api_token_secret }}"
+  register: creator_nodes_info
+  when: lxc_find_pm_host
+
+- name: Find PVE node with most free memory.
+  ansible.builtin.set_fact:
+    creator_node_current_highest_free: "{{ pvenode_free_mem }}"
+    lxc_pm_host: "{{ item.node }}"
+  loop: "{{ creator_nodes_info.proxmox_nodes }}"
+  loop_control:
+    label: "{{ item.node }}: {{ pvenode_free_mem }}: free memory"
+  vars:
+    pvenode_free_mem: "{{ item.maxmem | int - item.mem | int }}"
+  when:
+    - lxc_find_pm_host
+    - pvenode_free_mem | int > creator_node_current_highest_free | default(0) | int
+
+- name: Create LXC container '{{ creator_item.name }}'.
+  community.general.proxmox:
+    api_host: "{{ lxc_pm_api_host }}"
+    api_user: "{{ lxc_pm_api_user }}"
+    api_token_id: "{{ lxc_pm_api_token_name }}"
+    api_token_secret: "{{ lxc_pm_api_token_secret }}"
+
+    cores: "{{ lxc_cores }}"
+    cpus: "{{ lxc_cpus }}"
+    disk: "{{ creator_item.storage | default(lxc_storage) }}:{{ lxc_disk_size }}"
+    hostname: "{{ creator_item.name }}"
+    features: "{{ lxc_features }}"
+    memory: "{{ lxc_memory }}"
+    mounts: "{{ creator_item.mounts | default(omit) }}"
+    nameserver: "{{ ' '.join(lxc_nameservers) }}"
+    netif:
+      net0: "name=eth0,bridge={{ lxc_network_bridge }},ip={{ creator_item.ip | default('dhcp')
+        }}{{ lxc_net0_gw }}{{ ',ip6=' + creator_item.ip6 + lxc_net0_gw6 if
+        creator_item.ip6 is defined }}{{ lxc_net0_vlan }}"
+    node: "{{ creator_item.pm_host | default(lxc_pm_host) }}"
+    ostemplate: "{{ lxc_template_storage }}:vztmpl/{{ lxc_template }}"
+    pubkey: "{{ lxc_sshkeys }}"
+    searchdomain: "{{ ' '.join(lxc_searchdomains) }}"
+    state: "present"
+    swap: "{{ lxc_swap }}"
+    tags: "{{ lxc_tags + creator_item.tags | default([]) }}"
+    unprivileged: "{{ lxc_unprivileged }}"
+    vmid: "{{ creator_item.vmid | default(omit) }}"
+  notify: inventory refresh
+  register: creator_lxc
+
+- name: Start LXC container '{{ creator_item.name }}'.
+  community.general.proxmox:
+    api_host: "{{ lxc_pm_api_host }}"
+    api_user: "{{ lxc_pm_api_user }}"
+    api_token_id: "{{ lxc_pm_api_token_name }}"
+    api_token_secret: "{{ lxc_pm_api_token_secret }}"
+    state: "started"
+    unprivileged: "{{ lxc_unprivileged }}"
+    vmid: "{{ creator_lxc.vmid }}"
+  delay: 2
+  register: creator_lxc_start
+  until: not creator_lxc_start.failed
+
+- name: Include the Host IP tasks '{{ creator_item.name }}'.
+  ansible.builtin.include_tasks: host-ip.yml
+  when:
+    - lxc_ansible_host
+    - creator_lxc_start.changed

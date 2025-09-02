@@ -1,0 +1,93 @@
+---
+- name: Get node info.
+  community.general.proxmox_node_info:
+    api_host: "{{ cloud_init_pm_api_host }}"
+    api_user: "{{ cloud_init_pm_api_user }}"
+    api_token_id: "{{ cloud_init_pm_api_token_name }}"
+    api_token_secret: "{{ cloud_init_pm_api_token_secret }}"
+  register: creator_nodes_info
+  when: cloud_init_find_pm_host
+
+- name: Find PVE node with most free memory.
+  ansible.builtin.set_fact:
+    creator_node_current_highest_free: "{{ pvenode_free_mem }}"
+    cloud_init_pm_host: "{{ item.node }}"
+  loop: "{{ creator_nodes_info.proxmox_nodes }}"
+  loop_control:
+    label: "{{ item.node }}: {{ pvenode_free_mem }}: free memory"
+  vars:
+    pvenode_free_mem: "{{ item.maxmem | int - item.mem | int }}"
+  when:
+    - cloud_init_find_pm_host
+    - pvenode_free_mem | int > creator_node_current_highest_free | default(0) | int
+
+- name: "Create Virtual Machine '{{ creator_item.name }}'."
+  community.general.proxmox_kvm:
+    api_host: "{{ cloud_init_pm_api_host }}"
+    api_user: "{{ cloud_init_pm_api_user }}"
+    api_token_id: "{{ cloud_init_pm_api_token_name }}"
+    api_token_secret: "{{ cloud_init_pm_api_token_secret }}"
+
+    agent: "{{ cloud_init_agent }}"
+    cicustom: "{{ creator_item.custom | default(cloud_init_custom) | default(omit) }}"
+    cores: "{{ cloud_init_ctrl_cores if generated_vm_is_controller else cloud_init_work_cores }}"
+    cpu: "{{ cloud_init_cpu | default(omit) }}"
+    description: "{{ creator_item.description | default(omit) }}"
+    ide:
+      ide2: "{{ cloud_init_disk_storage }}:cloudinit"
+    ipconfig:
+      ipconfig0: "ip={{ creator_item.ip | default('dhcp') }}{{ cloud_init_ip_network_gw }}{{
+        ',ip6=' + creator_item.ip6 + cloud_init_ip_network_gw6 if creator_item.ip6 is defined }}"
+    memory: "{{ cloud_init_ctrl_memory if generated_vm_is_controller else cloud_init_work_memory }}"
+    name: "{{ creator_item.name }}"
+    nameservers: "{{ cloud_init_nameservers }}"
+    net:
+      net0: "virtio,bridge={{ cloud_init_network_bridge }}{{ cloud_init_ip_vlan }}"
+    node: "{{ creator_item.pm_host | default(cloud_init_pm_host) }}"
+    searchdomains: "{{ cloud_init_searchdomains }}"
+    serial:
+      serial0: "socket"
+    scsi:
+      scsi0: "{{ creator_item.storage | default(cloud_init_storage)
+        }}:0,format=raw,{{ cloud_init_import_from }}"
+    scsihw: "virtio-scsi-pci"
+    sshkeys: "{{ cloud_init_sshkeys | default(omit) }}"
+    sockets: "{{ cloud_init_ctrl_sockets if generated_vm_is_controller else cloud_init_work_sockets }}"
+    state: "present"
+    storage: "{{ creator_item.storage | default(cloud_init_storage) }}"
+    tags: "{{ creator_item.tags | default(cloud_init_tags) }}"
+    timeout: 300
+    vga: "serial0"
+    vmid: "{{ cloud_init_vlan_tag + creator_item.vmid if cloud_init_vlan_tag is defined and creator_item.vmid is defined else creator_item.vmid if creator_item.vmid is defined else omit }}"
+  notify: inventory refresh
+  register: creator_qemu_vm
+
+- name: "Resize the disk for the Virtual Machine '{{ creator_item.name }}'."
+  community.general.proxmox_disk:
+    api_host: "{{ cloud_init_pm_api_host }}"
+    api_user: "{{ cloud_init_pm_api_user }}"
+    api_token_id: "{{ cloud_init_pm_api_token_name }}"
+    api_token_secret: "{{ cloud_init_pm_api_token_secret }}"
+
+    disk: "scsi0"
+    size: "{{ cloud_init_ctrl_disk_size if generated_vm_is_controller else cloud_init_work_disk_size }}"
+    state: "resized"
+    vmid: "{{ creator_qemu_vm.vmid }}"
+
+- name: "Start the Virtual Machine '{{ creator_item.name }}'."
+  community.general.proxmox_kvm:
+    api_host: "{{ cloud_init_pm_api_host }}"
+    api_user: "{{ cloud_init_pm_api_user }}"
+    api_token_id: "{{ cloud_init_pm_api_token_name }}"
+    api_token_secret: "{{ cloud_init_pm_api_token_secret }}"
+    state: "started"
+    vmid: "{{ creator_qemu_vm.vmid }}"
+  delay: 2
+  register: creator_qemu_start
+  until: not creator_qemu_start.failed
+
+- name: "Include the Host IP tasks '{{ creator_item.name }}'."
+  ansible.builtin.include_tasks: host-ip.yml
+  when:
+    - cloud_init_ansible_host
+    - creator_qemu_start.changed

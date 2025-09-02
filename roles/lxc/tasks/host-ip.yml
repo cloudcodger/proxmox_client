@@ -1,7 +1,7 @@
 ---
 - name: Create the host_vars file.
   ansible.builtin.lineinfile:
-    path: "{{ lxc_ansible_host_vars_dir }}/{{ loop_ct.item.item.name }}.yml"
+    path: "{{ lxc_ansible_host_vars_dir }}/{{ creator_item.name }}.yml"
     create: true
     insertbefore: BOF
     line: ---
@@ -9,13 +9,14 @@
 
 - name: Get the IP address.
   ansible.builtin.command:
-    cmd: "pct exec {{ loop_ct.vmid }} hostname -- --all-ip-addresses"
-  delegate_to: "{{ loop_ct.item.item.pm_host | default(lxc_pm_host) }}"
+    cmd: "pct exec {{ creator_lxc.vmid }} hostname -- --all-ip-addresses"
+  delegate_to: "{{ creator_item.pm_host | default(lxc_pm_host) }}"
   register: lxc_ip
 
 - name: Update the host_vars file with ansible_host.
   ansible.builtin.lineinfile:
-    path: "{{ lxc_ansible_host_vars_dir }}/{{ loop_ct.item.item.name }}.yml"
+    path: "{{ lxc_ansible_host_vars_dir }}/{{ creator_item.name }}.yml"
     line: "ansible_host: {{ lxc_ip.stdout | trim }}"
+    insertafter: ^---$
     regexp: '^ansible_host: '
   notify: inventory refresh
