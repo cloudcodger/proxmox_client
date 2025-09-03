@@ -1,5 +1,10 @@
 # Change log
 
+# version 2.0.1
+
+- Both `cloud_init` and `lxc` roles, minor fix for `*_find_pm_host` calculation.
+  Has an issue when calling both roles in the same play.
+
 # version 2.0.0
 
 - Role `cloud_init` changes.
@@ -18,7 +23,7 @@
     - Changed `cloud_init_vms`, adding `description` and `tags` to the optional items.
     - Changed VM creation to perform all steps for each item before continuing to the next.
 
-- Role `cloud_init` changes.
+- Role `lxc` changes.
     - Added `lxc_find_pm_host`. When set to `true`, `lxc_pm_host` is set to the PVE node with the least memory in use for each CT created.
     - Added a `wait_for_connection` after start loop to wait until CTs are ready.
     - Changed default value of `lxc_ansible_inventory_refresh` to `false`.

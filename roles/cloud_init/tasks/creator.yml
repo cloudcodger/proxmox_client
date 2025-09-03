@@ -19,7 +19,7 @@
     pvenode_free_mem: "{{ item.maxmem | int - item.mem | int }}"
   when:
     - cloud_init_find_pm_host
-    - pvenode_free_mem | int > creator_node_current_highest_free | default(0) | int
+    - pvenode_free_mem | int >= creator_node_current_highest_free | default(0) | int
 
 - name: "Create Virtual Machine '{{ creator_item.name }}'."
   community.general.proxmox_kvm:
