@@ -84,6 +84,11 @@ At a minimum, set the following to desired values.
   - This is only done when a CT is created or started.
   - When calling this role in a playbook followed by another play to configure the CTs, a newly created host will not be found in the inventory unless this is done.
 
+- `lxc_bypass_wait_for_connection`
+  - `true`: Do not wait for the new systems to be accessible.
+  - `false`: Do wait.
+  - Default: `false`.
+
 - `lxc_construct_cidr_start`
   - The first IPv4 address in CIDR notation. For example, `lxc_construct_cidr_start: "192.168.1.21"`.
   - Default: None.
@@ -233,6 +238,11 @@ At a minimum, set the following to desired values.
   - `false`: CT `unprivileged` set to `false`.
   - Default: `true`.
   - This is the same default as the module.
+
+- `lxc_update_known_hosts`
+  - `true`: Look up the SSH host keys and update the local `.ssh/known_hosts` file.
+  - `false`: Skip these tasks.
+  - Default: `true`.
 
 - `lxc_vlan_tag`
   - A VLAN tag number for all CT networks.

@@ -19,4 +19,4 @@
     line: "ansible_host: {{ lxc_ip.stdout | trim }}"
     insertafter: ^---$
     regexp: '^ansible_host: '
-  notify: inventory refresh
+  notify: lxc inventory refresh

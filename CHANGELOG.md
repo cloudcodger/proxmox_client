@@ -1,5 +1,18 @@
 # Change log
 
+# version 2.0.2
+
+- Both `cloud_init` and `lxc` roles changes.
+    - Renamed handlers so playbooks that call both roles call the correct one.
+      Since these are the same, it made no difference, but a future change
+      expose the issue.
+    - Added adding hostkeys to known_hosts file.
+      When get IP from DHCP and needing to connect via it,
+      leaves the possibility that you will have a conflicting entry
+      that prevents the wait_for_connection from connecting.
+      Which requires using `-vvv` to debug.
+    - Added variable to bypass the `wait_for_connection`.
+
 # version 2.0.1
 
 - Both `cloud_init` and `lxc` roles, minor fix for `*_find_pm_host` calculation.

@@ -49,7 +49,7 @@
     tags: "{{ lxc_tags + creator_item.tags | default([]) }}"
     unprivileged: "{{ lxc_unprivileged }}"
     vmid: "{{ creator_item.vmid | default(omit) }}"
-  notify: inventory refresh
+  notify: lxc inventory refresh
   register: creator_lxc
 
 - name: Start LXC container '{{ creator_item.name }}'.

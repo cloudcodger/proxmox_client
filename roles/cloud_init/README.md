@@ -104,6 +104,11 @@ At a minimum, set the following to desired values.
   - This is only done when a VM is created or started.
   - When calling this role in a playbook followed by another play to configure the VM, a newly created host will not be found in the inventory unless this is done.
 
+- `cloud_init_bypass_wait_for_connection`
+  - `true`: Do not wait for the new systems to be accessible.
+  - `false`: Do wait.
+  - Default: `false`.
+
 - `cloud_init_construct_cidr_start`
   - The first IPv4 address in CIDR notation. For example,
     `cloud_init_construct_cidr_start: "192.168.1.21/24"`.
@@ -269,6 +274,11 @@ At a minimum, set the following to desired values.
   - List of tags assigned to non-construct VMs.
   - Default: `[]`
   - Not used for construct VMs which use ``cloud_init_ctrl_tags`, `cloud_init_genesis_tags` and `cloud_init_work_tags`.
+
+- `cloud_init_update_known_hosts`
+  - `true`: Look up the SSH host keys and update the local `.ssh/known_hosts` file.
+  - `false`: Skip these tasks.
+  - Default: `true`.
 
 - `cloud_init_vlan_tag`
   - A VLAN tag number for all VM networks.

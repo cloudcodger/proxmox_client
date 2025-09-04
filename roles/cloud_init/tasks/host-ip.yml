@@ -22,4 +22,4 @@
     line: "ansible_host: {{ qemu_ip.stdout | from_json | selectattr('name', 'equalto', 'eth0') | map(attribute='ip-addresses') | first | selectattr('ip-address-type', 'equalto', 'ipv4') | map(attribute='ip-address') | first }}"
     insertafter: ^---$
     regexp: '^ansible_host: '
-  notify: inventory refresh
+  notify: cloud init inventory refresh

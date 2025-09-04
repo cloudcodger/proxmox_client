@@ -25,6 +25,7 @@ cloud_init_ansible_host_vars_dir: "{{ lookup('ansible.builtin.first_found',
   'host_vars',
   paths=cloud_init_ansible_host_vars_paths) }}"
 cloud_init_ansible_inventory_refresh: "{{ cloud_init_ansible_host }}"
+cloud_init_bypass_wait_for_connection: false
 
 cloud_init_construct_controllers: 0
 cloud_init_construct_ctrl_prefix: "ctrl"
@@ -50,6 +51,7 @@ cloud_init_pm_host: "{{ cloud_init_pm_api_host }}"
 cloud_init_searchdomains: []
 cloud_init_storage: 'local-thin'
 cloud_init_tags: []
+cloud_init_update_known_hosts: true
 cloud_init_vmid: '00'
 
 cloud_init_vms: []

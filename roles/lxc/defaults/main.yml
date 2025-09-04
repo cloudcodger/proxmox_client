@@ -24,6 +24,7 @@ lxc_ansible_host_vars_dir: "{{ lookup('ansible.builtin.first_found',
   'host_vars',
   paths=lxc_ansible_host_vars_paths) }}"
 lxc_ansible_inventory_refresh: false
+lxc_bypass_wait_for_connection: false
 lxc_construct_container_prefix: "new_container"
 lxc_construct_containers: 0
 lxc_construct_ct0_tags: []
@@ -47,3 +48,4 @@ lxc_tags: []
 lxc_template: "ubuntu-22.04-standard_22.04-1_amd64.tar.zst"
 lxc_template_storage: 'local'
 lxc_unprivileged: true
+lxc_update_known_hosts: true

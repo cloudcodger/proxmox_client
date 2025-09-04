@@ -59,7 +59,7 @@
     timeout: 300
     vga: "serial0"
     vmid: "{{ cloud_init_vlan_tag + creator_item.vmid if cloud_init_vlan_tag is defined and creator_item.vmid is defined else creator_item.vmid if creator_item.vmid is defined else omit }}"
-  notify: inventory refresh
+  notify: cloud init inventory refresh
   register: creator_qemu_vm
 
 - name: "Resize the disk for the Virtual Machine '{{ creator_item.name }}'."

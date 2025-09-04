@@ -50,9 +50,34 @@
 - name: Flush handlers.
   meta: flush_handlers
 
+- name: Scan for ssh-hostkeys
+  ansible.builtin.command:
+    cmd: "/usr/bin/ssh-keyscan {{ hostvars[item]['ansible_host'] }}"
+  changed_when: false
+  ignore_errors: true
+  register: cloud_init_keyscan_cmd
+  loop: "{{ combined_vms | map(attribute='name') }}"
+  loop_control:
+    label: "{{ item }}: {{ hostvars[item]['ansible_host'] }}"
+  until: not cloud_init_keyscan_cmd.failed
+  when: cloud_init_update_known_hosts is true
+
+- name: Add hostkeys to known_hosts
+  ansible.builtin.lineinfile:
+    path: ~/.ssh/known_hosts
+    regexp: "^{{ item.split()[:2] | join(' ') }}"
+    line: "{{ item }}"
+  loop: "{{ cloud_init_keyscan_cmd.results | map(attribute='stdout_lines') | flatten }}"
+  loop_control:
+    label: "{{ item.split()[:2] | join(' ') }}"
+  when:
+    - cloud_init_update_known_hosts is true
+    - item[:1] != '#'
+
 - name: Wait for the new systems to be accessible.
   ansible.builtin.wait_for_connection:
   delegate_to: "{{ item.name }}"
   loop: "{{ combined_vms }}"
   loop_control:
     label: "{{ item.name }}"
+  when: cloud_init_bypass_wait_for_connection is true
