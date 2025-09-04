@@ -1,5 +1,10 @@
 # Change log
 
+# version 2.0.3
+
+- Both `cloud_init` and `lxc` roles changes.
+    - Renamed current highest free variables to fix conflict between roles.
+
 # version 2.0.2
 
 - Both `cloud_init` and `lxc` roles changes.
