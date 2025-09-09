@@ -30,6 +30,7 @@
 
     cores: "{{ lxc_cores }}"
     cpus: "{{ lxc_cpus }}"
+    description: "{{ creator_item.description | default(omit) }}"
     disk: "{{ creator_item.storage | default(lxc_storage) }}:{{ lxc_disk_size }}"
     hostname: "{{ creator_item.name }}"
     features: "{{ lxc_features }}"

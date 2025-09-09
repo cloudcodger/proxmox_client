@@ -1,5 +1,10 @@
 # Change log
 
+# version 2.0.4
+
+- Role `lxc` changes.
+    - Changed `lxc_cts`, by adding `description` to the optional items. Fixed it to be like the one for `cloud_init`.
+
 # version 2.0.3
 
 - Both `cloud_init` and `lxc` roles changes.

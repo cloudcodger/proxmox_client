@@ -269,6 +269,9 @@ Required keys:
 
 Optional keys:
 
+- `description`
+  - Becomes the Notes for a CT in the PVE UI Summary page.
+
 - `ip`
   - Static IPv4 address (in CIDR notation).
   - Default: `dhcp`.
