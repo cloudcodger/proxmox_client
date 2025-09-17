@@ -1,5 +1,11 @@
 # Change log
 
+# version 2.1.0
+
+- Renamed all `community.general.proxmox_*` modules to the new `community.proxmox` collection modules.
+- Role `cloud_init` changes.
+    - Added the ability to configure `net1`, `net2` and `net3`.
+
 # version 2.0.4
 
 - Role `lxc` changes.

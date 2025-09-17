@@ -47,6 +47,9 @@ cloud_init_image_storage: local
 cloud_init_k8s_tag: 'k8s'
 cloud_init_nameservers: []
 cloud_init_network_bridge: 'vmbr0'
+cloud_init_network1_bridge: 'vmbr1'
+cloud_init_network2_bridge: 'vmbr2'
+cloud_init_network3_bridge: 'vmbr3'
 cloud_init_pm_host: "{{ cloud_init_pm_api_host }}"
 cloud_init_searchdomains: []
 cloud_init_storage: 'local-thin'

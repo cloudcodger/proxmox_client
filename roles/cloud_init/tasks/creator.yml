@@ -1,6 +1,6 @@
 ---
 - name: Get node info.
-  community.general.proxmox_node_info:
+  community.proxmox.proxmox_node_info:
     api_host: "{{ cloud_init_pm_api_host }}"
     api_user: "{{ cloud_init_pm_api_user }}"
     api_token_id: "{{ cloud_init_pm_api_token_name }}"
@@ -22,7 +22,7 @@
     - pvenode_free_mem | int >= cloud_init_creator_node_current_highest_free | default(0) | int
 
 - name: "Create Virtual Machine '{{ creator_item.name }}'."
-  community.general.proxmox_kvm:
+  community.proxmox.proxmox_kvm:
     api_host: "{{ cloud_init_pm_api_host }}"
     api_user: "{{ cloud_init_pm_api_user }}"
     api_token_id: "{{ cloud_init_pm_api_token_name }}"
@@ -38,11 +38,24 @@
     ipconfig:
       ipconfig0: "ip={{ creator_item.ip | default('dhcp') }}{{ cloud_init_ip_network_gw }}{{
         ',ip6=' + creator_item.ip6 + cloud_init_ip_network_gw6 if creator_item.ip6 is defined }}"
+      ipconfig1: "{{ 'ip=%s%s' | format(creator_item.ip1, cloud_init_ip_network_gw1)
+        if creator_item.ip1 is defined else omit }}"
+      ipconfig2: "{{ 'ip=%s%s' | format(creator_item.ip2, cloud_init_ip_network_gw2)
+        if creator_item.ip2 is defined else omit }}"
+      ipconfig3: "{{ 'ip=%s%s' | format(creator_item.ip3, cloud_init_ip_network_gw3)
+        if creator_item.ip3 is defined else omit }}"
     memory: "{{ cloud_init_ctrl_memory if generated_vm_is_controller else cloud_init_work_memory }}"
     name: "{{ creator_item.name }}"
     nameservers: "{{ cloud_init_nameservers }}"
     net:
       net0: "virtio,bridge={{ cloud_init_network_bridge }}{{ cloud_init_ip_vlan }}"
+      net1: "{{ 'virtio,bridge=%s%s' | format(cloud_init_network1_bridge, cloud_init_ip_vlan1)
+        if creator_item.ip1 is defined else omit }}"
+      net2: "{{ 'virtio,bridge=%s%s' | format(cloud_init_network2_bridge, cloud_init_ip_vlan2)
+        if creator_item.ip2 is defined else omit }}"
+      net3: "{{ 'virtio,bridge=%s%s' | format(cloud_init_network3_bridge, cloud_init_ip_vlan3)
+        if creator_item.ip3 is defined else omit }}"
+      # net1: "virtio,bridge={{ cloud_init_network1_bridge }}"
     node: "{{ creator_item.pm_host | default(cloud_init_pm_host) }}"
     searchdomains: "{{ cloud_init_searchdomains }}"
     serial:
@@ -63,7 +76,7 @@
   register: creator_qemu_vm
 
 - name: "Resize the disk for the Virtual Machine '{{ creator_item.name }}'."
-  community.general.proxmox_disk:
+  community.proxmox.proxmox_disk:
     api_host: "{{ cloud_init_pm_api_host }}"
     api_user: "{{ cloud_init_pm_api_user }}"
     api_token_id: "{{ cloud_init_pm_api_token_name }}"
@@ -75,7 +88,7 @@
     vmid: "{{ creator_qemu_vm.vmid }}"
 
 - name: "Start the Virtual Machine '{{ creator_item.name }}'."
-  community.general.proxmox_kvm:
+  community.proxmox.proxmox_kvm:
     api_host: "{{ cloud_init_pm_api_host }}"
     api_user: "{{ cloud_init_pm_api_user }}"
     api_token_id: "{{ cloud_init_pm_api_token_name }}"

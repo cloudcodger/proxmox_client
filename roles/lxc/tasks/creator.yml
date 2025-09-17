@@ -1,6 +1,6 @@
 ---
 - name: Get node info.
-  community.general.proxmox_node_info:
+  community.proxmox.proxmox_node_info:
     api_host: "{{ lxc_pm_api_host }}"
     api_user: "{{ lxc_pm_api_user }}"
     api_token_id: "{{ lxc_pm_api_token_name }}"
@@ -22,7 +22,7 @@
     - pvenode_free_mem | int >= lxc_creator_node_current_highest_free | default(0) | int
 
 - name: Create LXC container '{{ creator_item.name }}'.
-  community.general.proxmox:
+  community.proxmox.proxmox:
     api_host: "{{ lxc_pm_api_host }}"
     api_user: "{{ lxc_pm_api_user }}"
     api_token_id: "{{ lxc_pm_api_token_name }}"
@@ -54,7 +54,7 @@
   register: creator_lxc
 
 - name: Start LXC container '{{ creator_item.name }}'.
-  community.general.proxmox:
+  community.proxmox.proxmox:
     api_host: "{{ lxc_pm_api_host }}"
     api_user: "{{ lxc_pm_api_user }}"
     api_token_id: "{{ lxc_pm_api_token_name }}"

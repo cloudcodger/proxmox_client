@@ -19,6 +19,18 @@
       genesis: "{{ omit if item > 0 else true }}"
       ip: "{{ cloud_init_construct_cidr_start | ansible.utils.ipmath(item)
         }}/{{ cloud_init_construct_cidr_start | split('/') | last }}"
+      ip1: "{{ '%s/%s' | format(
+        cloud_init_construct_cidr1_start | default('') | ansible.utils.ipmath(item),
+        cloud_init_construct_cidr1_start | split('/') | last)
+        if cloud_init_construct_cidr1_start is defined else omit }}"
+      ip2: "{{ '%s/%s' | format(
+        cloud_init_construct_cidr2_start | default('') | ansible.utils.ipmath(item),
+        cloud_init_construct_cidr2_start | split('/') | last)
+        if cloud_init_construct_cidr2_start is defined else omit }}"
+      ip3: "{{ '%s/%s' | format(
+        cloud_init_construct_cidr3_start | default('') | ansible.utils.ipmath(item),
+        cloud_init_construct_cidr3_start | split('/') | last)
+        if cloud_init_construct_cidr3_start is defined else omit }}"
       ip6: "{{ '%s/%s' | format(
         cloud_init_construct_cidr6_start | default('::/0') | ansible.utils.ipmath(item),
         cloud_init_construct_cidr6_start | split('/') | last)

@@ -115,6 +115,21 @@ At a minimum, set the following to desired values.
   - Default: None.
   - Required when using `cloud_init_construct_*`.
 
+- `cloud_init_construct_cidr1_start`
+  - The first IPv4 address in CIDR notation for `net1`.
+    For example, `cloud_init_construct_cidr1_start: "192.168.11.21/24"`.
+  - Default: None.
+
+- `cloud_init_construct_cidr2_start`
+  - The first IPv4 address in CIDR notation for `net2`.
+    For example, `cloud_init_construct_cidr1_start: "192.168.21.21/24"`.
+  - Default: None.
+
+- `cloud_init_construct_cidr3_start`
+  - The first IPv4 address in CIDR notation for `net3`.
+    For example, `cloud_init_construct_cidr1_start: "192.168.31.21/24"`.
+  - Default: None.
+
 - `cloud_init_construct_cidr6_start`
   - The first IPv6 address in CIDR notation.
   - Default: None.
@@ -218,6 +233,30 @@ At a minimum, set the following to desired values.
   - The default gateway used for all VMs.
   - Default: unset and omitted.
 
+- `cloud_init_network1_bridge`
+  - The bridge network used for all VMs.
+  - Default: `vmbr1`.
+
+- `cloud_init_network2_bridge`
+  - The bridge network used for all VMs.
+  - Default: `vmbr2`.
+
+- `cloud_init_network3_bridge`
+  - The bridge network used for all VMs.
+  - Default: `vmbr3`.
+
+- `cloud_init_network1_gw`
+  - The gateway used on `net1` for all VMs.
+  - Default: unset and omitted.
+
+- `cloud_init_network2_gw`
+  - The gateway used on `net2` for all VMs.
+  - Default: unset and omitted.
+
+- `cloud_init_network3_gw`
+  - The gateway used on `net3` for all VMs.
+  - Default: unset and omitted.
+
 - `cloud_init_network_gw6`
   - The default IPv6 gateway.
   - Default: unset and omitted.
@@ -284,6 +323,18 @@ At a minimum, set the following to desired values.
   - A VLAN tag number for all VM networks.
   - Default: Not set
   - This also gets prepended to any provided VMIDs.
+
+- `cloud_init_vlan1_tag`
+  - A VLAN tag number for all VM `net1` networks.
+  - Default: Not set
+
+- `cloud_init_vlan2_tag`
+  - A VLAN tag number for all VM `net2` networks.
+  - Default: Not set
+
+- `cloud_init_vlan3_tag`
+  - A VLAN tag number for all VM `net3` networks.
+  - Default: Not set
 
 - `cloud_init_vmid`
   - The image directory containing the Cloud-Init image.
@@ -358,8 +409,23 @@ Optional keys:
   - Used for kubernetes clustering in other places and intended to only be set to `true` on at most one VM, and normally on a VM where `control: true`.
 
 - `ip`
-  - Static IPv4 address (in CIDR notation).
+  - Static IPv4 address (in CIDR notation) for `net0`.
   - Default: `dhcp`.
+
+- `ip1`
+  - Static IPv4 address (in CIDR notation) for `net1`.
+  - Default: unset.
+  - The `net1` interface is not configured when this is not set.
+
+- `ip2`
+  - Static IPv4 address (in CIDR notation) for `net2`.
+  - Default: unset.
+  - The `net2` interface is not configured when this is not set.
+
+- `ip3`
+  - Static IPv4 address (in CIDR notation) for `net3`.
+  - Default: unset.
+  - The `net3` interface is not configured when this is not set.
 
 - `ip6`
   - Static IPv6 address (in CIDR notation).
