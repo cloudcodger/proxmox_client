@@ -30,7 +30,6 @@ lxc_construct_containers: 0
 lxc_construct_ct0_tags: []
 lxc_construct_hosts: []
 lxc_cores: "4"
-lxc_cpus: "1"
 
 lxc_cts: []
 

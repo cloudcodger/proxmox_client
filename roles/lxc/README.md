@@ -126,8 +126,12 @@ At a minimum, set the following to desired values.
   - Default: `4`.
 
 - `lxc_cpus`
-  - The number of CPUs (sockets) for all CTs.
-  - Default: `1`.
+  - The limit for the number of CPUs for all CTs.
+  - Default: None (is omitted).
+
+- `lxc_cpuunits`
+  - The number of CPU Units for all CTs.
+  - Default: None (is omitted).
 
 - `lxc_cts`
   - See the [lxc_cts](#lxc_cts) section below for details.

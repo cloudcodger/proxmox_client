@@ -1,6 +1,6 @@
 ---
 - name: Get node info.
-  community.proxmox.proxmox_node_info:
+  community.general.proxmox_node_info:
     api_host: "{{ cloud_init_pm_api_host }}"
     api_user: "{{ cloud_init_pm_api_user }}"
     api_token_id: "{{ cloud_init_pm_api_token_name }}"
@@ -22,7 +22,7 @@
     - pvenode_free_mem | int >= cloud_init_creator_node_current_highest_free | default(0) | int
 
 - name: "Create Virtual Machine '{{ creator_item.name }}'."
-  community.proxmox.proxmox_kvm:
+  community.general.proxmox_kvm:
     api_host: "{{ cloud_init_pm_api_host }}"
     api_user: "{{ cloud_init_pm_api_user }}"
     api_token_id: "{{ cloud_init_pm_api_token_name }}"
@@ -76,7 +76,7 @@
   register: creator_qemu_vm
 
 - name: "Resize the disk for the Virtual Machine '{{ creator_item.name }}'."
-  community.proxmox.proxmox_disk:
+  community.general.proxmox_disk:
     api_host: "{{ cloud_init_pm_api_host }}"
     api_user: "{{ cloud_init_pm_api_user }}"
     api_token_id: "{{ cloud_init_pm_api_token_name }}"
@@ -88,7 +88,7 @@
     vmid: "{{ creator_qemu_vm.vmid }}"
 
 - name: "Start the Virtual Machine '{{ creator_item.name }}'."
-  community.proxmox.proxmox_kvm:
+  community.general.proxmox_kvm:
     api_host: "{{ cloud_init_pm_api_host }}"
     api_user: "{{ cloud_init_pm_api_user }}"
     api_token_id: "{{ cloud_init_pm_api_token_name }}"
