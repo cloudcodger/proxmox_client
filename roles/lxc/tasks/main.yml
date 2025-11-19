@@ -52,7 +52,7 @@
   register: lxc_keyscan_cmd
   loop: "{{ combined_lxcs | map(attribute='name') }}"
   loop_control:
-    label: "{{ item }}: {{ hostvars[item]['ansible_host'] }}"
+    label: "{{ item }}: {{ hostvars[item]['ansible_host'] | default('none') }}"
   until: not lxc_keyscan_cmd.failed
   when: lxc_update_known_hosts is true
 

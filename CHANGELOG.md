@@ -1,5 +1,13 @@
 # Change log
 
+# version 2.1.2
+
+- Role `cloud_init` changes.
+    - Fix to stop errors on loop labels.
+
+- Role `lxc` changes.
+    - Fix to stop errors on loop labels.
+
 # version 2.1.1
 
 - Renamed all `community.proxmox.proxmox_*` modules back to the `community.general` collection modules. This means the roles are not yet compatible with Ansible `version 12.0.0` unless you install the `community.general`, collection which is no longer there by default. The `community.proxmox.proxmox` role was found to always modify the `hwaddr`, even when not specified. This differs from the other one and causes any existing CT to be updated and the networking stops working.

@@ -70,7 +70,7 @@
   register: cloud_init_keyscan_cmd
   loop: "{{ combined_vms | map(attribute='name') }}"
   loop_control:
-    label: "{{ item }}: {{ hostvars[item]['ansible_host'] }}"
+    label: "{{ item }}: {{ hostvars[item]['ansible_host'] | default('none') }}"
   until: not cloud_init_keyscan_cmd.failed
   when: cloud_init_update_known_hosts is true
 
