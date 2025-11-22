@@ -1,6 +1,6 @@
 # The add_guest_host role.
 
-Loop up PVE guest information, get the IP address and add them to the Ansible inventory. Optionally (by default), perform a key scan and add the hosts to the `~/.ssh/known_hosts` file.
+Loop over PVE guest information, get the IP address and add them to the Ansible inventory. Optionally (by default), perform a key scan and add the hosts to the `~/.ssh/known_hosts` file.
 
 # Prerequisite
 
