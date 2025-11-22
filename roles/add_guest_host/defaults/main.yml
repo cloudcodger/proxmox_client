@@ -1,0 +1,21 @@
+---
+# Look at the README.md file for details on the variables.
+# Not all the variables used have default values shown here.
+
+# The values here must be set to use an "API Token".
+# The user and token must also have the permissions needed to perform all tasks.
+add_guest_host_pm_api_host: "{{ proxmox_client_api_host | default('proxmox_master') }}"
+add_guest_host_pm_api_user: "{{ proxmox_client_api_user | default('devops@pve') }}"
+add_guest_host_pm_api_token_name: "{{ proxmox_client_api_token_name | default('ansible') }}"
+
+# In order to protect the API Token Secret, it will by default
+# be read from a file under the calling users $HOME directory on the control host.
+# For example, using the above `add_guest_host_pm_api_user` and `pm_api_token`
+# will produce the file `$HOME/.pve_tokens/devops-pve-ansible.token`.
+add_guest_host_secrets_dir: "{{ proxmox_client_api_secrets_dir | default('~/.pve_tokens') }}"
+add_guest_host_pm_api_token_file: "{{ proxmox_client_api_token_file | default(add_guest_host_pm_default_api_token_file) }}"
+
+add_guest_host_ct_groups: []
+add_guest_host_list: []
+add_guest_host_to_ssh_known_hosts: true
+add_guest_host_vm_groups: []

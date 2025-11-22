@@ -1,4 +1,4 @@
 ---
-- name: lxc inventory refresh
+- name: LXC inventory refresh
   ansible.builtin.include_tasks: refresh-inventory.yml
   when: lxc_ansible_inventory_refresh

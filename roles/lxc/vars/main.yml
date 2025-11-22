@@ -6,3 +6,5 @@ lxc_net0_vlan: "{{ ',tag=' + lxc_vlan_tag if lxc_vlan_tag is defined }}"
 # Be careful about directly setting this as it may result in the
 # token secret value being leaked in various ways.
 lxc_pm_api_token_secret: "{{ lookup('file', lxc_secrets_dir + '/' + lxc_pm_api_token_file) }}"
+lxc_pm_default_api_token_file: "{{ lxc_pm_api_user | replace('@', '-')
+  }}-{{ lxc_pm_api_token_name }}.token"

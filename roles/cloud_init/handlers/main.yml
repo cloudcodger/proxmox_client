@@ -1,4 +1,4 @@
 ---
-- name: cloud init inventory refresh
+- name: Cloud init inventory refresh
   ansible.builtin.include_tasks: refresh-inventory.yml
   when: cloud_init_ansible_inventory_refresh

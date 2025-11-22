@@ -1,0 +1,6 @@
+---
+# Be careful about directly setting this as it may result in the token secret value being leaked in various ways.
+add_guest_host_pm_api_token_secret: "{{ lookup('file',
+  add_guest_host_secrets_dir + '/' + add_guest_host_pm_api_token_file) }}"
+add_guest_host_pm_default_api_token_file: "{{ add_guest_host_pm_api_user | replace('@', '-')
+  }}-{{ add_guest_host_pm_api_token_name }}.token"

@@ -4,6 +4,12 @@ A collection of roles for the creation of Proxmox LXC containers(CT) and Proxmox
 
 # Roles
 
+## `cloudcodger.proxmox_client.add_guest_host`
+
+Called on `localhost` to look up PVE Guest machines (CTs and VMs), get the IP address for them and add the host to the Ansible inventory. For VMs, this currently requires that the system have the QEMU Guest Agent installed and enabled.
+
+VMs require the QEMU Guest Agent.
+
 ## `cloudcodger.proxmox_client.cloud_init`
 
 Called on `localhost` to create a set of Proxmox KVM virtual machines using the [Cloud-Init Support](https://pve.proxmox.com/wiki/Cloud-Init_Support) provided in Proxmox.

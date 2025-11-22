@@ -1,5 +1,4 @@
-`lxc`
-=====
+# `lxc` role
 
 Create a set of identically configured Proxmox LXC Containers (CT) in [Proxmox VE](https://pve.proxmox.com/wiki/Main_Page).
 
@@ -24,26 +23,40 @@ Potential use cases to create;
 
 To avoid complexity and possible confusion, it is recommended to use either the `lxc_cts` _or_ the `lxc_construct_*` settings and not both.
 
-### Sequencial CTs
+# Sequencial CTs
 
 Use the `lxc_construct_containers` and `lxc_construct_*` variables to create a set of identical CTs. For example, when creating three CTs named, `ns1`, `ns2` and `ns3` that all have the same CPU sockets/cores, memory, disk size, and tags.
 
-### Individually Defined
+# Individually Defined
 
 This option provides the creation of multiple CTs that differ in the values set under each item in [`lxc_cts`](#lxc_cts).
 
-Requirements
-------------
+# Requirements
 
 - The `proxmoxer` Python module installed on the Ansible controller.
 - Proxmox VE version 8 or above installed on the API host(s).
 - Proxmox VE Datacenter Storage with `Container` content allowed.
 - An LXC container "template" on each host where CTs are being created.
 
-Role Variables
---------------
+# Role Variables
 
-### Required variables.
+## Default Variables.
+
+Because a Proxmox VE node or cluster will usually set the same values between the `cloud_init` and `lxc` roles
+for many varialbes, when set, these variables will be used as the default value for the associated variable.
+
+- `proxmox_client_api_host`
+- `proxmox_client_api_user`
+- `proxmox_client_api_secrets_dir`
+- `proxmox_client_api_token_file`
+- `proxmox_client_api_token_name`
+- `proxmox_client_find_pm_host`
+- `proxmox_client_nameservers`
+- `proxmox_client_searchdomains`
+- `proxmox_client_sshkeys`
+- `proxmox_client_storage`
+
+## Required variables.
 
 The default values for the following variables will most likely not be desired or possibly even work.
 For example, unless you named your Proxmox host `proxmox_master` and can resolve it via the DNS,
@@ -58,7 +71,7 @@ At a minimum, set the following to desired values.
 - `lxc_construct_hosts`
 - `lxc_construct_vmid_start`
 
-### All variables.
+## All variables.
 
 - `lxc_ansible_host`
   - `true`: Create a `host_vars` file for the CT and set `ansible_host` in it.
@@ -181,13 +194,13 @@ At a minimum, set the following to desired values.
   - Proxmox user for API connection.
   - Default: `devops@pve`.
 
+- `lxc_pm_api_token_file`
+  - File name of the API Token Secret.
+  - Default: `lxc_pm_api_user` + `-` + `lxc_pm_api_token_name`, replacing the `@` with `-`. For example, `devops-pve-ansible` from the default values.
+
 - `lxc_pm_api_token_name`
   - Proxmox user specific API token for API connection.
   - Default: `ansible`.
-
-- `lxc_pm_api_token_file`
-  - File name of the API Token Secret.
-  - Default: `lxc_pm_api_user` + `-` + `lxc_pm_api_token_name`, replacing the `@` with `-`. For example, `devops-pve-ansible` from the above default values.
 
 - `lxc_pm_api_token_secret`
   - The API token secret for API connection.
@@ -253,16 +266,15 @@ At a minimum, set the following to desired values.
   - Default: Not set
   - This also gets prepended to any provided VMIDs.
 
-Special Variable Notes
-----------------------
+# Special Variable Notes
 
-### `lxc_template` and `lxc_template_storage`
+## `lxc_template` and `lxc_template_storage`
 
 The specified template file must be located in the `lxc_template_storage` storage which must be configured to contain "Containers" content. Using the default `local` storage as an example, this is a directory type storage with the path `/var/lib/vz` and contains the sub-directory `/var/lib/vz/template` under which a sub-directory named `cache` exists to hold the templates. The full default path is `/var/lib/vz/template/cache/` for the template file location.
 
 The template must exist on every host where a CT will be created. They can be uploaded to the storage or downloaded using the "Download from URL" option in the UI or using many other methods of your choosing.
 
-### `lxc_cts`
+## `lxc_cts`
 
 This variable must be a list of hashs that contain specific key/value pairs defining the CTs to create.
 
@@ -300,13 +312,11 @@ Optional keys:
   - Default: Not set, and let PVE select the next available VMID.
   - When set, this will also have the `lxc_vlan_tag` prepended to it.
 
-Dependencies
-------------
+# Dependencies
 
 This role depends on the [community.general.proxmox](https://docs.ansible.com/ansible/latest/collections/community/general/proxmox_module.html) module.
 
-Example Playbooks
------------------
+# Example Playbooks
 
 ```yaml
 - name: >-

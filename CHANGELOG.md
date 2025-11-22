@@ -1,5 +1,18 @@
 # Change log
 
+# version 2.2.0
+
+- Updated some readme files for readability.
+- Updates to resolve lint violations.
+- Added role `add_guest_host`.
+
+- Role `cloud_init` changes.
+    - Changed default value for `cloud_init_ansible_inventory_refresh` to `false`.
+    - Updated multiple default values to first use a `proxmox_client_...` value before the actual default.
+
+- Role `lxc` changes.
+    - Updated multiple default values to first use a `proxmox_client_...` value before the actual default.
+
 # version 2.1.2
 
 - Role `cloud_init` changes.

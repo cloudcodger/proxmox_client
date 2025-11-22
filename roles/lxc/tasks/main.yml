@@ -1,7 +1,7 @@
 ---
 - name: Make sure that SSH Keys are set.
   ansible.builtin.assert:
-    that: lxc_sshkeys is defined
+    that: lxc_sshkeys is defined or proxmox_client_sshkeys is defined
     quiet: true
 
 - name: Make sure that any required constuct values are set.
@@ -14,35 +14,34 @@
 
 - name: Construct containers list
   ansible.builtin.set_fact:
-    cts:
+    lxc_new_cts:
       name: "{{ lxc_construct_container_prefix }}{{ item + 1 }}"
       ip: "{{ lxc_construct_cidr_start | ansible.utils.ipmath(item)
         }}/{{ lxc_construct_cidr_start | split('/') | last }}"
-      ip6: "{{ '%s/%s' | format(
-        lxc_construct_cidr6_start | default('::/0') | ansible.utils.ipmath(item),
-        lxc_construct_cidr6_start| split('/') | last)
-        if lxc_construct_cidr6_start is defined else omit }}"
+      ip6: "{{ '%s/%s' | format(lxc_construct_cidr6_start | default('::/0') |
+        ansible.utils.ipmath(item), lxc_construct_cidr6_start | split('/') |
+        last) if lxc_construct_cidr6_start is defined else omit }}"
       pm_host: "{{ omit if not lxc_construct_hosts else lxc_construct_hosts[item % lxc_construct_hosts | length] }}"
       tags: "{{ lxc_construct_ct0_tags if lxc_construct_ct0_tags and item < 1 else
         omit }}"
       vmid: "{{ '%03d' | format(lxc_construct_vmid_start + item)
         if lxc_construct_vmid_start is defined else omit }}"
-  register: generated_lxcs
+  register: lxc_generated
   loop: "{{ range(0, lxc_construct_containers) | list }}"
 
 - name: Combine constructed containers and containers.
   ansible.builtin.set_fact:
-    combined_lxcs: "{{ lxc_cts + generated_lxcs.results
-      | map(attribute='ansible_facts.cts') }}"
+    lxc_combined_lxcs: "{{ lxc_cts + lxc_generated.results
+      | map(attribute='ansible_facts.lxc_new_cts') }}"
 
 - name: Include the creation tasks.
   ansible.builtin.include_tasks: creator.yml
-  loop: "{{ combined_lxcs }}"
+  loop: "{{ lxc_combined_lxcs }}"
   loop_control:
     loop_var: creator_item
 
 - name: Flush handlers.
-  meta: flush_handlers
+  ansible.builtin.meta: flush_handlers
 
 - name: Scan for ssh-hostkeys
   ansible.builtin.command:
@@ -50,7 +49,7 @@
   changed_when: false
   ignore_errors: true
   register: lxc_keyscan_cmd
-  loop: "{{ combined_lxcs | map(attribute='name') }}"
+  loop: "{{ lxc_combined_lxcs | map(attribute='name') }}"
   loop_control:
     label: "{{ item }}: {{ hostvars[item]['ansible_host'] | default('none') }}"
   until: not lxc_keyscan_cmd.failed
@@ -71,7 +70,7 @@
 - name: Wait for the new systems to be accessible.
   ansible.builtin.wait_for_connection:
   delegate_to: "{{ item.name }}"
-  loop: "{{ combined_lxcs }}"
+  loop: "{{ lxc_combined_lxcs }}"
   loop_control:
     label: "{{ item.name }}"
   when: lxc_bypass_wait_for_connection is true

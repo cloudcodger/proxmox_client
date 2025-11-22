@@ -4,17 +4,16 @@
 
 # The values here must be set to use an "API Token".
 # The user and token must also have the permissions needed to perform all tasks.
-lxc_pm_api_host: 'proxmox_master'
-lxc_pm_api_user: 'devops@pve'
-lxc_pm_api_token_name: 'ansible'
+lxc_pm_api_host: "{{ proxmox_client_api_host | default('proxmox_master') }}"
+lxc_pm_api_user: "{{ proxmox_client_api_user | default('devops@pve') }}"
+lxc_pm_api_token_name: "{{ proxmox_client_api_token_name | default('ansible') }}"
 
 # In order to protect the API Token Secret, it will by default
 # be read from a file under the calling users $HOME directory.
 # For example, using the above `lxc_pm_api_user` and `pm_api_token` will produce
 # the file `$HOME/.pve_tokens/devops-pve-ansible.token`.
-lxc_secrets_dir: "{{ lookup('env', 'HOME') }}/.pve_tokens"
-lxc_pm_api_token_file: "{{ lxc_pm_api_user | replace('@', '-')
-  }}-{{ lxc_pm_api_token_name }}.token"
+lxc_secrets_dir: "{{ proxmox_client_api_secrets_dir | default('~/.pve_tokens') }}"
+lxc_pm_api_token_file: "{{  proxmox_client_api_token_file | default(lxc_pm_default_api_token_file) }}"
 
 lxc_ansible_host: false
 lxc_ansible_host_vars_paths:
@@ -34,17 +33,17 @@ lxc_cores: "4"
 lxc_cts: []
 
 lxc_disk_size: "9"
-lxc_find_pm_host: false
+lxc_find_pm_host: "{{ proxmox_client_find_pm_host | default(false) }}"
 lxc_features: []
 lxc_memory: "1024"
-lxc_nameservers: []
+lxc_nameservers: "{{ proxmox_client_nameservers | default([]) }}"
 lxc_network_bridge: "vmbr0"
 lxc_pm_host: "{{ lxc_pm_api_host }}"
-lxc_searchdomains: []
-lxc_storage: "local-thin"
+lxc_searchdomains: "{{ proxmox_client_searchdomains | default([]) }}"
+lxc_storage: "{{ proxmox_client_storage | default('local-thin') }}"
 lxc_swap: 0
 lxc_tags: []
 lxc_template: "ubuntu-22.04-standard_22.04-1_amd64.tar.zst"
 lxc_template_storage: 'local'
 lxc_unprivileged: true
-lxc_update_known_hosts: true
+lxc_update_known_hosts: "{{ proxmox_client_update_known_hosts | default(true) }}"

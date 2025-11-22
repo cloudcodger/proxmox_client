@@ -9,7 +9,7 @@
 
 - name: Construct cloud_init_vms list
   ansible.builtin.set_fact:
-    vms:
+    cloud_init_new_vms:
       name: "{{ cloud_init_construct_ctrl_prefix if
         generated_vm_is_controller else
         cloud_init_construct_work_prefix
@@ -19,20 +19,20 @@
       genesis: "{{ omit if item > 0 else true }}"
       ip: "{{ cloud_init_construct_cidr_start | ansible.utils.ipmath(item)
         }}/{{ cloud_init_construct_cidr_start | split('/') | last }}"
-      ip1: "{{ '%s/%s' | format(
-        cloud_init_construct_cidr1_start | default('') | ansible.utils.ipmath(item),
+      ip1: "{{ '%s/%s' | format(cloud_init_construct_cidr1_start |
+        default('') | ansible.utils.ipmath(item),
         cloud_init_construct_cidr1_start | split('/') | last)
         if cloud_init_construct_cidr1_start is defined else omit }}"
-      ip2: "{{ '%s/%s' | format(
-        cloud_init_construct_cidr2_start | default('') | ansible.utils.ipmath(item),
+      ip2: "{{ '%s/%s' | format(cloud_init_construct_cidr2_start |
+        default('') | ansible.utils.ipmath(item),
         cloud_init_construct_cidr2_start | split('/') | last)
         if cloud_init_construct_cidr2_start is defined else omit }}"
-      ip3: "{{ '%s/%s' | format(
-        cloud_init_construct_cidr3_start | default('') | ansible.utils.ipmath(item),
+      ip3: "{{ '%s/%s' | format(cloud_init_construct_cidr3_start |
+        default('') | ansible.utils.ipmath(item),
         cloud_init_construct_cidr3_start | split('/') | last)
         if cloud_init_construct_cidr3_start is defined else omit }}"
-      ip6: "{{ '%s/%s' | format(
-        cloud_init_construct_cidr6_start | default('::/0') | ansible.utils.ipmath(item),
+      ip6: "{{ '%s/%s' | format(cloud_init_construct_cidr6_start |
+        default('::/0') | ansible.utils.ipmath(item),
         cloud_init_construct_cidr6_start | split('/') | last)
         if cloud_init_construct_cidr6_start is defined else omit }}"
       pm_host: "{{ cloud_init_construct_hosts[item % cloud_init_construct_hosts | length] }}"
@@ -41,26 +41,26 @@
         cloud_init_work_tags }}"
       vmid: "{{ '%03d' | format(cloud_init_construct_vmid_start + item)
         if cloud_init_construct_vmid_start is defined else omit }}"
-  register: generated_vms
+  register: cloud_init_generated_vms
   loop: "{{ range(0, cloud_init_construct_controllers + cloud_init_construct_workers) | list }}"
   vars:
     generated_vm_is_controller: "{{ item < cloud_init_construct_controllers }}"
 
 - name: Combine constructed virtual machines and cloud_init_vms.
   ansible.builtin.set_fact:
-    combined_vms: "{{ cloud_init_vms + generated_vms.results |
-      map(attribute='ansible_facts.vms') }}"
+    cloud_init_combined_vms: "{{ cloud_init_vms + cloud_init_generated_vms.results |
+      map(attribute='ansible_facts.cloud_init_new_vms') }}"
 
 - name: Include the creation tasks.
   ansible.builtin.include_tasks: creator.yml
-  loop: "{{ combined_vms }}"
+  loop: "{{ cloud_init_combined_vms }}"
   loop_control:
     loop_var: creator_item
   vars:
     generated_vm_is_controller: "{{ creator_item.control | default(false) }}"
 
 - name: Flush handlers.
-  meta: flush_handlers
+  ansible.builtin.meta: flush_handlers
 
 - name: Scan for ssh-hostkeys
   ansible.builtin.command:
@@ -68,7 +68,7 @@
   changed_when: false
   ignore_errors: true
   register: cloud_init_keyscan_cmd
-  loop: "{{ combined_vms | map(attribute='name') }}"
+  loop: "{{ cloud_init_combined_vms | map(attribute='name') }}"
   loop_control:
     label: "{{ item }}: {{ hostvars[item]['ansible_host'] | default('none') }}"
   until: not cloud_init_keyscan_cmd.failed
@@ -89,7 +89,7 @@
 - name: Wait for the new systems to be accessible.
   ansible.builtin.wait_for_connection:
   delegate_to: "{{ item.name }}"
-  loop: "{{ combined_vms }}"
+  loop: "{{ cloud_init_combined_vms }}"
   loop_control:
     label: "{{ item.name }}"
   when: cloud_init_bypass_wait_for_connection is true

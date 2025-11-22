@@ -14,3 +14,5 @@ cloud_init_ip_vlan3: "{{ ',tag=' + cloud_init_vlan3_tag if cloud_init_vlan3_tag 
 
 # Be careful about directly setting this as it may result in the token secret value being leaked in various ways.
 cloud_init_pm_api_token_secret: "{{ lookup('file', cloud_init_secrets_dir + '/' + cloud_init_pm_api_token_file) }}"
+cloud_init_pm_default_api_token_file: "{{ cloud_init_pm_api_user | replace('@', '-')
+  }}-{{ cloud_init_pm_api_token_name }}.token"

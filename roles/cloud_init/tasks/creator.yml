@@ -5,14 +5,14 @@
     api_user: "{{ cloud_init_pm_api_user }}"
     api_token_id: "{{ cloud_init_pm_api_token_name }}"
     api_token_secret: "{{ cloud_init_pm_api_token_secret }}"
-  register: creator_nodes_info
+  register: cloud_init_creator_nodes_info
   when: cloud_init_find_pm_host
 
 - name: Find PVE node with most free memory.
   ansible.builtin.set_fact:
     cloud_init_creator_node_current_highest_free: "{{ pvenode_free_mem }}"
     cloud_init_pm_host: "{{ item.node }}"
-  loop: "{{ creator_nodes_info.proxmox_nodes }}"
+  loop: "{{ cloud_init_creator_nodes_info.proxmox_nodes }}"
   loop_control:
     label: "{{ item.node }}: {{ pvenode_free_mem }}: free memory"
   vars:
@@ -64,16 +64,17 @@
       scsi0: "{{ creator_item.storage | default(cloud_init_storage)
         }}:0,format=raw,{{ cloud_init_import_from }}"
     scsihw: "virtio-scsi-pci"
-    sshkeys: "{{ cloud_init_sshkeys | default(omit) }}"
+    sshkeys: "{{ proxmox_client_sshkeys | default(cloud_init_sshkeys) | default(omit) }}"
     sockets: "{{ cloud_init_ctrl_sockets if generated_vm_is_controller else cloud_init_work_sockets }}"
     state: "present"
     storage: "{{ creator_item.storage | default(cloud_init_storage) }}"
     tags: "{{ creator_item.tags | default(cloud_init_tags) }}"
     timeout: 300
     vga: "serial0"
-    vmid: "{{ cloud_init_vlan_tag + creator_item.vmid if cloud_init_vlan_tag is defined and creator_item.vmid is defined else creator_item.vmid if creator_item.vmid is defined else omit }}"
-  notify: cloud init inventory refresh
-  register: creator_qemu_vm
+    vmid: "{{ cloud_init_vlan_tag + creator_item.vmid if cloud_init_vlan_tag is defined and
+      creator_item.vmid is defined else creator_item.vmid if creator_item.vmid is defined else omit }}"
+  notify: Cloud init inventory refresh
+  register: cloud_init_creator_qemu_vm
 
 - name: "Resize the disk for the Virtual Machine '{{ creator_item.name }}'."
   community.general.proxmox_disk:
@@ -85,7 +86,7 @@
     disk: "scsi0"
     size: "{{ cloud_init_ctrl_disk_size if generated_vm_is_controller else cloud_init_work_disk_size }}"
     state: "resized"
-    vmid: "{{ creator_qemu_vm.vmid }}"
+    vmid: "{{ cloud_init_creator_qemu_vm.vmid }}"
 
 - name: "Start the Virtual Machine '{{ creator_item.name }}'."
   community.general.proxmox_kvm:
@@ -94,13 +95,13 @@
     api_token_id: "{{ cloud_init_pm_api_token_name }}"
     api_token_secret: "{{ cloud_init_pm_api_token_secret }}"
     state: "started"
-    vmid: "{{ creator_qemu_vm.vmid }}"
+    vmid: "{{ cloud_init_creator_qemu_vm.vmid }}"
   delay: 2
-  register: creator_qemu_start
-  until: not creator_qemu_start.failed
+  register: cloud_init_creator_qemu_start
+  until: not cloud_init_creator_qemu_start.failed
 
 - name: "Include the Host IP tasks '{{ creator_item.name }}'."
   ansible.builtin.include_tasks: host-ip.yml
   when:
     - cloud_init_ansible_host
-    - creator_qemu_start.changed
+    - cloud_init_creator_qemu_start.changed

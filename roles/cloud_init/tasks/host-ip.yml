@@ -5,21 +5,26 @@
     create: true
     insertbefore: BOF
     line: ---
+    mode: "0644"
     regexp: '^---$'
 
 - name: Get the IP address.
   ansible.builtin.command:
-    cmd: "qm agent {{ creator_qemu_vm.vmid }} network-get-interfaces"
+    cmd: "qm agent {{ cloud_init_creator_qemu_vm.vmid }} network-get-interfaces"
+  changed_when: false
   delay: 5
   delegate_to: "{{ creator_item.pm_host | default(cloud_init_pm_host) }}"
-  register: qemu_ip
+  register: cloud_init_qemu_ip
   retries: 5
-  until: qemu_ip.rc == 0
+  until: cloud_init_qemu_ip.rc == 0
 
 - name: Update the host_vars file with ansible_host.
   ansible.builtin.lineinfile:
     path: "{{ cloud_init_ansible_host_vars_dir }}/{{ creator_item.name }}.yml"
-    line: "ansible_host: {{ qemu_ip.stdout | from_json | selectattr('name', 'equalto', 'eth0') | map(attribute='ip-addresses') | first | selectattr('ip-address-type', 'equalto', 'ipv4') | map(attribute='ip-address') | first }}"
+    line: "ansible_host: {{ cloud_init_qemu_ip.stdout | from_json |
+      selectattr('name', 'equalto', 'eth0') | map(attribute='ip-addresses') | first |
+      selectattr('ip-address-type', 'equalto', 'ipv4') | map(attribute='ip-address') | first }}"
+    mode: "0644"
     insertafter: ^---$
     regexp: '^ansible_host: '
-  notify: cloud init inventory refresh
+  notify: Cloud init inventory refresh

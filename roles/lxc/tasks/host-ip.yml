@@ -5,11 +5,13 @@
     create: true
     insertbefore: BOF
     line: ---
+    mode: "0644"
     regexp: '^---$'
 
 - name: Get the IP address.
   ansible.builtin.command:
-    cmd: "pct exec {{ creator_lxc.vmid }} hostname -- --all-ip-addresses"
+    cmd: "pct exec {{ lxc_creator.vmid }} hostname -- --all-ip-addresses"
+  changed_when: false
   delegate_to: "{{ creator_item.pm_host | default(lxc_pm_host) }}"
   register: lxc_ip
 
@@ -17,6 +19,7 @@
   ansible.builtin.lineinfile:
     path: "{{ lxc_ansible_host_vars_dir }}/{{ creator_item.name }}.yml"
     line: "ansible_host: {{ lxc_ip.stdout | trim }}"
+    mode: "0644"
     insertafter: ^---$
     regexp: '^ansible_host: '
-  notify: lxc inventory refresh
+  notify: LXC inventory refresh

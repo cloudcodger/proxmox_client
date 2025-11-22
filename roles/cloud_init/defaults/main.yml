@@ -4,17 +4,16 @@
 
 # The values here must be set to use an "API Token".
 # The user and token must also have the permissions needed to perform all tasks.
-cloud_init_pm_api_host: 'proxmox_master'
-cloud_init_pm_api_user: 'devops@pve'
-cloud_init_pm_api_token_name: 'ansible'
+cloud_init_pm_api_host: "{{ proxmox_client_api_host | default('proxmox_master') }}"
+cloud_init_pm_api_user: "{{ proxmox_client_api_user | default('devops@pve') }}"
+cloud_init_pm_api_token_name: "{{ proxmox_client_api_token_name | default('ansible') }}"
 
 # In order to protect the API Token Secret, it will by default
 # be read from a file under the calling users $HOME directory on the control host.
 # For example, using the above `cloud_init_pm_api_user` and `pm_api_token`
 # will produce the file `$HOME/.pve_tokens/devops-pve-ansible.token`.
-cloud_init_secrets_dir: "{{ lookup('env', 'HOME') }}/.pve_tokens"
-cloud_init_pm_api_token_file: "{{ cloud_init_pm_api_user | replace('@', '-')
-  }}-{{ cloud_init_pm_api_token_name }}.token"
+cloud_init_secrets_dir: "{{ proxmox_client_api_secrets_dir | default('~/.pve_tokens') }}"
+cloud_init_pm_api_token_file: "{{ proxmox_client_api_token_file | default(cloud_init_pm_default_api_token_file) }}"
 
 cloud_init_agent: false
 cloud_init_ansible_host: false
@@ -24,7 +23,7 @@ cloud_init_ansible_host_vars_paths:
 cloud_init_ansible_host_vars_dir: "{{ lookup('ansible.builtin.first_found',
   'host_vars',
   paths=cloud_init_ansible_host_vars_paths) }}"
-cloud_init_ansible_inventory_refresh: "{{ cloud_init_ansible_host }}"
+cloud_init_ansible_inventory_refresh: false
 cloud_init_bypass_wait_for_connection: false
 
 cloud_init_construct_controllers: 0
@@ -40,21 +39,21 @@ cloud_init_ctrl_sockets: '1'
 cloud_init_ctrl_tags: ["control", "{{ cloud_init_k8s_tag }}"]
 
 cloud_init_disk_storage: 'local'
-cloud_init_find_pm_host: false
+cloud_init_find_pm_host: "{{ proxmox_client_find_pm_host | default(false) }}"
 cloud_init_genesis_tags: "control,genesis,{{ cloud_init_k8s_tag }}"
 cloud_init_image: ubuntu-24.04-server.qcow2
 cloud_init_image_storage: local
 cloud_init_k8s_tag: 'k8s'
-cloud_init_nameservers: []
+cloud_init_nameservers: "{{ proxmox_client_nameservers | default([]) }}"
 cloud_init_network_bridge: 'vmbr0'
 cloud_init_network1_bridge: 'vmbr1'
 cloud_init_network2_bridge: 'vmbr2'
 cloud_init_network3_bridge: 'vmbr3'
 cloud_init_pm_host: "{{ cloud_init_pm_api_host }}"
-cloud_init_searchdomains: []
-cloud_init_storage: 'local-thin'
+cloud_init_searchdomains: "{{ proxmox_client_searchdomains | default([]) }}"
+cloud_init_storage: "{{ proxmox_client_storage | default('local-thin') }}"
 cloud_init_tags: []
-cloud_init_update_known_hosts: true
+cloud_init_update_known_hosts: "{{ proxmox_client_update_known_hosts | default(true) }}"
 cloud_init_vmid: '00'
 
 cloud_init_vms: []

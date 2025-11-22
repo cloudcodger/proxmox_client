@@ -1,5 +1,4 @@
-`cloud_init`
-============
+# `cloud_init` Role
 
 Create PVE VMs using the [Cloud-Init Support](https://pve.proxmox.com/wiki/Cloud-Init_Support) provided in [Proxmox VE](https://pve.proxmox.com/wiki/Main_Page).
 
@@ -18,7 +17,7 @@ There are three primary use cases for this role.
 
 A combination of using both `cloud_init_construct_*` and `cloud_init_vms` is allowed, but discouraged and not recommended. Using both at the same time makes it difficult for others to follow what is being created. To avoid complexity and confusion, it is recommended to use either the `cloud_init_vms` _or_ the `cloud_init_construct_*` settings and not both.
 
-### k8s
+# k8s
 
 This role was originally designed to support the creation of two different groups of VMs as often desired for use with Kubernetes (k8s).
 One group for use as k8s control (`ctrl`) nodes and another group for k8s worker (`work`) nodes.
@@ -31,18 +30,17 @@ Each group can have different values for the following items:
 - disk size
 - Proxmox tags
 
-### Sequencial VMs
+# Sequencial VMs
 
 Recommended configuration is to use the `cloud_init_construct_workers` and `cloud_init_construct_work_*` variables to create a set of identical VMs. For example, when creating three VMs named, `lb1`, `lb2` and `lb3` that all have the same CPU sockets/cores, memory, disk size, and tags.
 
 The `cloud_init_construct_controllers` and `cloud_init_construct_ctrl_*` variables could also be used. Best practice is to pick one and use it for all sequencial VMs.
 
-### Individually Defined
+# Individually Defined
 
 This option provides the creation of multiple VMs that differ in the values set under each item in [`cloud_init_vms`](#cloud_init_vms).
 
-Requirements
-------------
+# Requirements
 
 - The `proxmoxer` Python module installed on the Ansible controller.
 - Proxmox VE version 8 or above installed on the API host(s).
@@ -53,10 +51,25 @@ The default values for the above mentioned cloud-init images are `local` and the
 
 Hint: The `cloudcodger.proxmox_openssh.proxmox_ve` and `cloudcodger.proxmox_openssh.proxmox_datacenter` roles can be used to create the above directory, upload cloud-init images, and set `local` to allow Disk Images content. However, there is no dependency on these roles as the storage requirements can be satisfied by manual configuration.
 
-Role Variables
---------------
+# Role Variables
 
-### Required variables.
+## Default Variables.
+
+Because a Proxmox VE node or cluster will usually set the same values between the `cloud_init` and `lxc` roles
+for many varialbes, when set, these variables will be used as the default value for the associated variable.
+
+- `proxmox_client_api_host`
+- `proxmox_client_api_user`
+- `proxmox_client_api_secrets_dir`
+- `proxmox_client_api_token_file`
+- `proxmox_client_api_token_name`
+- `proxmox_client_find_pm_host`
+- `proxmox_client_nameservers`
+- `proxmox_client_searchdomains`
+- `proxmox_client_sshkeys`
+- `proxmox_client_storage`
+
+## Required variables.
 
 The default values for the following variables will most likely not be desired or possibly even work.
 For example, unless you named your Proxmox host `proxmox_master` and can resolve it via the DNS,
@@ -72,7 +85,7 @@ At a minimum, set the following to desired values.
 - `cloud_init_construct_vmid_start`
 - `cloud_init_sshkeys`
 
-### All variables.
+## All variables.
 
 - `cloud_init_agent`
   - `true`: enable the QEMU guest agent option.
@@ -262,20 +275,20 @@ At a minimum, set the following to desired values.
   - Default: unset and omitted.
 
 - `cloud_init_pm_api_host`
-  - Proxmox host for API connection
+  - Proxmox host for API connection.
   - Default: `proxmox_master`.
 
 - `cloud_init_pm_api_user`
   - Proxmox user for API connection.
   - Default: `devops@pve`.
 
+- `cloud_init_pm_api_token_file`
+  - File name of the API Token Secret.
+  - Default: `cloud_init_pm_api_user` + `-` + `cloud_init_pm_api_token_name`, replacing the `@` with `-`. For example, `devops-pve-ansible` from the default values.
+
 - `cloud_init_pm_api_token_name`
   - Proxmox user specific API token for API connection.
   - Default: `ansible`.
-
-- `cloud_init_pm_api_token_file`
-  - File name of the API Token Secret.
-  - Default: `cloud_init_pm_api_user` + `-` + `cloud_init_pm_api_token_name`, replacing the `@` with `-`. For example, `devops-pve-ansible` from the above default values.
 
 - `cloud_init_pm_api_token_secret`
   - The API token secret for API connection.
@@ -366,10 +379,9 @@ At a minimum, set the following to desired values.
   - A list of Proxmox tags assigned to VMs with `control: false`.
   - Default: `worker,{{ cloud_init_k8s_tags }}`.
 
-Special Variable Notes
-----------------------
+# Special Variable Notes
 
-### `cloud_init_custom`
+## `cloud_init_custom`
 
 This allows for custom settings to be specied for the VMs using the [Custom Cloud-Init Configuration](https://pve.proxmox.com/wiki/Cloud-Init_Support#_custom_cloud_init_configuration). The command `man qm` on a Proxmox host will provide more information on the `cicustom` parameter to the `qm create` command, which this sets.
 An example value would be `vendor=configs:snippets/vendor-data.yml`.
@@ -378,7 +390,7 @@ Usage observation: When using the `cicustom` option with a value like `user=loca
 
 Hint: The Ansible Collection [cloudcodger.proxmox_openssh](https://galaxy.ansible.com/cloudcodger/proxmox_openssh) contains the `proxmox_snippet` role that can be used to create a snippet to use here.
 
-### `cloud_init_vms`
+## `cloud_init_vms`
 
 This variable must be a list of hashs that contain specific key/value pairs defining the VMs to create.
 
@@ -444,13 +456,11 @@ Optional keys:
   - Default: Not set, and let PVE select the next available VMID.
   - When set, this will also have the `cloud_init_vlan_tag` prepended to it.
 
-Dependencies
-------------
+# Dependencies
 
 This role depends on the [community.general.proxmox_kvm](https://docs.ansible.com/ansible/latest/collections/community/general/proxmox_kvm_module.html) module.
 
-Example Playbooks
------------------
+# Example Playbooks
 
 ```yaml
 ---
