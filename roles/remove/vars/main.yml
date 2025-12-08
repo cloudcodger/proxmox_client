@@ -1,0 +1,7 @@
+---
+remove_list: "{{ query('ansible.builtin.inventory_hostnames', remove_host_patterns) }}"
+# Be careful about directly setting this as it may result in the token secret value being leaked in various ways.
+remove_pm_api_token_secret: "{{ lookup('file',
+  remove_secrets_dir + '/' + remove_pm_api_token_file) }}"
+remove_pm_default_api_token_file: "{{ remove_pm_api_user | replace('@', '-')
+  }}-{{ remove_pm_api_token_name }}.token"

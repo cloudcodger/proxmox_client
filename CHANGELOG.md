@@ -1,5 +1,9 @@
 # Change log
 
+# version 2.3.0
+
+- Added role `remove`.
+
 # version 2.2.0
 
 - Updated some readme files for readability.

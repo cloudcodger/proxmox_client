@@ -1,0 +1,19 @@
+---
+# Look at the README.md file for details on the variables.
+# Not all the variables used have default values shown here.
+
+# The values here must be set to use an "API Token".
+# The user and token must also have the permissions needed to perform all tasks.
+remove_pm_api_host: "{{ proxmox_client_api_host | default('proxmox_master') }}"
+remove_pm_api_user: "{{ proxmox_client_api_user | default('devops@pve') }}"
+remove_pm_api_token_name: "{{ proxmox_client_api_token_name | default('ansible') }}"
+
+# In order to protect the API Token Secret, it will by default
+# be read from a file under the calling users $HOME directory on the control host.
+# For example, using the above `remove_pm_api_user` and `pm_api_token_name`
+# will produce `$HOME/.pve_tokens/devops-pve-ansible.token`.
+remove_secrets_dir: "{{ proxmox_client_api_secrets_dir | default('~/.pve_tokens') }}"
+remove_pm_api_token_file: "{{ proxmox_client_api_token_file | default(remove_pm_default_api_token_file) }}"
+
+remove_from_ssh_known_hosts: true
+remove_host_patterns: '!all'

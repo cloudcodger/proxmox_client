@@ -19,3 +19,8 @@ See the [`README.md`](roles/cloud_init/README.md) file under the role directory 
 
 Called on `localhost` to create a set of Proxmox LXC Containers.
 See the [`README.md`](roles/lxc/README.md) file under the role directory for more detailed information.
+
+## `cloudcodger.proxmox.remove`
+
+Called on `localhost` to stop and remove a set of Proxmox Guest Machines.
+See the [`README.md`](roles/remove/README.md) file under the role directory for more detailed information.

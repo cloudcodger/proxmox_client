@@ -1,0 +1,80 @@
+---
+- name: Confirm removal of hosts.
+  pause:
+    prompt: "Enter 'true', 'yes', or '1' to continue and remove {{ remove_list }}?"
+  register: confirm_continue
+  failed_when: not (confirm_continue.user_input | bool)
+
+- name: Remove 'ansible_host' from known_hosts file.
+  ansible.builtin.known_hosts:
+    name: "{{ hostvars[item]['ansible_host'] }}"
+    state: absent
+  loop: "{{ remove_list }}"
+  loop_control:
+    label: "{{ hostvars[item]['ansible_host'] | default(item) }}"
+  when:
+    - remove_from_ssh_known_hosts is true
+    - hostvars[item]['ansible_host'] is defined
+
+- name: Remove 'inventory_hostname' from known_hosts file.
+  ansible.builtin.known_hosts:
+    name: "{{ item }}"
+    state: absent
+  loop: "{{ remove_list }}"
+  when: remove_from_ssh_known_hosts is true
+
+- name: Unconditionally shut down the LXC containers.
+  community.general.proxmox:
+    api_host: "{{ remove_pm_api_host }}"
+    api_user: "{{ remove_pm_api_user }}"
+    api_token_id: "{{ remove_pm_api_token_name }}"
+    api_token_secret: "{{ remove_pm_api_token_secret }}"
+    force: true
+    hostname: "{{ item }}"
+    node: "{{ hostvars[item]['proxmox_node'] }}"
+    state: stopped
+  loop: "{{ remove_list | intersect(groups['proxmox_all_lxc']) }}"
+  loop_control:
+    pause: 1
+
+- name: Unconditionally shut down the VMs.
+  community.general.proxmox_kvm:
+    api_host: "{{ remove_pm_api_host }}"
+    api_user: "{{ remove_pm_api_user }}"
+    api_token_id: "{{ remove_pm_api_token_name }}"
+    api_token_secret: "{{ remove_pm_api_token_secret }}"
+    force: true
+    name: "{{ item }}"
+    node: "{{ hostvars[item]['proxmox_node'] }}"
+    state: stopped
+  loop: "{{ remove_list | intersect(groups['proxmox_all_qemu']) }}"
+  loop_control:
+    pause: 1
+
+- name: Remove the LXC Containers.
+  community.general.proxmox:
+    api_host: "{{ remove_pm_api_host }}"
+    api_user: "{{ remove_pm_api_user }}"
+    api_token_id: "{{ remove_pm_api_token_name }}"
+    api_token_secret: "{{ remove_pm_api_token_secret }}"
+    hostname: "{{ item }}"
+    node: "{{ hostvars[item]['proxmox_node'] }}"
+    state: absent
+  delay: 1
+  loop: "{{ remove_list | intersect(groups['proxmox_all_lxc']) }}"
+  register: results
+  until: not results.failed
+
+- name: Remove the VMs.
+  community.general.proxmox_kvm:
+    api_host: "{{ remove_pm_api_host }}"
+    api_user: "{{ remove_pm_api_user }}"
+    api_token_id: "{{ remove_pm_api_token_name }}"
+    api_token_secret: "{{ remove_pm_api_token_secret }}"
+    name: "{{ item }}"
+    node: "{{ hostvars[item]['proxmox_node'] }}"
+    state: absent
+  delay: 1
+  loop: "{{ remove_list | intersect(groups['proxmox_all_qemu']) }}"
+  register: results
+  until: not results.failed
