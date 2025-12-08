@@ -67,6 +67,11 @@ you will need to set `remove_pm_api_host`.
   - Local directory in which the API Token Secret file is located.
   - Default: `~/.pve_tokens`.
 
+- `remove_skip_confirmation_prompt`
+  - Skip the prompt for confirmation before continuing to actually remove hosts.
+  - Default: `false`
+  - Some playbooks may need to bypass the confirmation.
+
 # Example Playbooks
 
 ```yaml

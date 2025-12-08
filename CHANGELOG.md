@@ -1,5 +1,10 @@
 # Change log
 
+# version 2.3.1
+
+- Role `remove` changes.
+    - Added `remove_skip_confirmation_prompt` variable that facilitates promptless use.
+
 # version 2.3.0
 
 - Added role `remove`.

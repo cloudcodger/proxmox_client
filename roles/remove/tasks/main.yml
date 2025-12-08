@@ -4,6 +4,8 @@
     prompt: "Enter 'true', 'yes', or '1' to continue and remove {{ remove_list }}?"
   register: remove_confirm_continue
   failed_when: not (remove_confirm_continue.user_input | bool)
+  when:
+    - remove_skip_confirmation_prompt is not true
 
 - name: Remove 'ansible_host' from known_hosts file.
   ansible.builtin.known_hosts:

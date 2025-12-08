@@ -17,3 +17,4 @@ remove_pm_api_token_file: "{{ proxmox_client_api_token_file | default(remove_pm_
 
 remove_from_ssh_known_hosts: true
 remove_host_patterns: '!all'
+remove_skip_confirmation_prompt: false
