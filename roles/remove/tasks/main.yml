@@ -1,9 +1,9 @@
 ---
 - name: Confirm removal of hosts.
-  pause:
+  ansible.builtin.pause:
     prompt: "Enter 'true', 'yes', or '1' to continue and remove {{ remove_list }}?"
-  register: confirm_continue
-  failed_when: not (confirm_continue.user_input | bool)
+  register: remove_confirm_continue
+  failed_when: not (remove_confirm_continue.user_input | bool)
 
 - name: Remove 'ansible_host' from known_hosts file.
   ansible.builtin.known_hosts:
@@ -62,8 +62,8 @@
     state: absent
   delay: 1
   loop: "{{ remove_list | intersect(groups['proxmox_all_lxc']) }}"
-  register: results
-  until: not results.failed
+  register: remove_results
+  until: not remove_results.failed
 
 - name: Remove the VMs.
   community.general.proxmox_kvm:
@@ -76,5 +76,5 @@
     state: absent
   delay: 1
   loop: "{{ remove_list | intersect(groups['proxmox_all_qemu']) }}"
-  register: results
-  until: not results.failed
+  register: remove_results
+  until: not remove_results.failed
