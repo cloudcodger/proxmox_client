@@ -1,5 +1,14 @@
 # Change log
 
+# version 2.3.2
+
+- Role `remove` changes.
+    - Fixed `object has no attribute 'proxmox_node'` error.
+    - Changed `remove_skip_confirmation_prompt` so a string is changed to a `bool`.
+
+- Role `add_guest_host` changes.
+    - Added `until:` so it will not fail on the first attempt.
+
 # version 2.3.1
 
 - Role `remove` changes.

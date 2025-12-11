@@ -70,6 +70,8 @@
   loop: "{{ add_guest_host_ct_ip_address.results |
     map(attribute='item.name') + add_guest_host_vm_ip_address.results | map(attribute='item.name') }}"
   register: add_guest_host_scanned_keys
+  until: add_guest_host_scanned_keys.rc == 0
+  # retries: 8
 
 - name: Add ssh-hostkeys to ~/.ssh/known_hosts.
   ansible.builtin.lineinfile:

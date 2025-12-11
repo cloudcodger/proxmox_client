@@ -5,7 +5,7 @@
   register: remove_confirm_continue
   failed_when: not (remove_confirm_continue.user_input | bool)
   when:
-    - remove_skip_confirmation_prompt is not true
+    - remove_skip_confirmation_prompt | bool is not true
 
 - name: Remove 'ansible_host' from known_hosts file.
   ansible.builtin.known_hosts:
@@ -25,6 +25,14 @@
   loop: "{{ remove_list }}"
   when: remove_from_ssh_known_hosts is true
 
+- name: Get Proxmox guests Info.
+  community.general.proxmox_vm_info:
+    api_host: "{{ remove_pm_api_host }}"
+    api_user: "{{ remove_pm_api_user }}"
+    api_token_id: "{{ remove_pm_api_token_name }}"
+    api_token_secret: "{{ remove_pm_api_token_secret }}"
+  register: remove_pve_vm_info
+
 - name: Unconditionally shut down the LXC containers.
   community.general.proxmox:
     api_host: "{{ remove_pm_api_host }}"
@@ -33,7 +41,8 @@
     api_token_secret: "{{ remove_pm_api_token_secret }}"
     force: true
     hostname: "{{ item }}"
-    node: "{{ hostvars[item]['proxmox_node'] }}"
+    node: "{{ remove_pve_vm_info.proxmox_vms |
+      selectattr('name', 'equalto', item) | map(attribute='node') | first }}"
     state: stopped
   loop: "{{ remove_list | intersect(groups['proxmox_all_lxc']) }}"
   loop_control:
@@ -47,7 +56,8 @@
     api_token_secret: "{{ remove_pm_api_token_secret }}"
     force: true
     name: "{{ item }}"
-    node: "{{ hostvars[item]['proxmox_node'] }}"
+    node: "{{ remove_pve_vm_info.proxmox_vms |
+      selectattr('name', 'equalto', item) | map(attribute='node') | first }}"
     state: stopped
   loop: "{{ remove_list | intersect(groups['proxmox_all_qemu']) }}"
   loop_control:
@@ -60,7 +70,8 @@
     api_token_id: "{{ remove_pm_api_token_name }}"
     api_token_secret: "{{ remove_pm_api_token_secret }}"
     hostname: "{{ item }}"
-    node: "{{ hostvars[item]['proxmox_node'] }}"
+    node: "{{ remove_pve_vm_info.proxmox_vms |
+      selectattr('name', 'equalto', item) | map(attribute='node') | first }}"
     state: absent
   delay: 1
   loop: "{{ remove_list | intersect(groups['proxmox_all_lxc']) }}"
@@ -74,7 +85,8 @@
     api_token_id: "{{ remove_pm_api_token_name }}"
     api_token_secret: "{{ remove_pm_api_token_secret }}"
     name: "{{ item }}"
-    node: "{{ hostvars[item]['proxmox_node'] }}"
+    node: "{{ remove_pve_vm_info.proxmox_vms |
+      selectattr('name', 'equalto', item) | map(attribute='node') | first }}"
     state: absent
   delay: 1
   loop: "{{ remove_list | intersect(groups['proxmox_all_qemu']) }}"
