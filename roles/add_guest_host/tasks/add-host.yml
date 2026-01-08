@@ -1,0 +1,28 @@
+---
+- name: Get Proxmox VM info with Network info.
+  community.general.proxmox_vm_info:
+    api_host: "{{ add_guest_host_pm_api_host }}"
+    api_user: "{{ add_guest_host_pm_api_user }}"
+    api_token_id: "{{ add_guest_host_pm_api_token_name }}"
+    api_token_secret: "{{ add_guest_host_pm_api_token_secret }}"
+    name: "{{ add_guest_host_item.name }}"
+    network: true
+  register: add_guest_host_add_host_guest_info
+  retries: 5
+  until: >-
+    add_guest_host_add_host_guest_info.failed is false and
+    add_guest_host_add_host_guest_info.proxmox_vms is defined and
+    add_guest_host_add_host_guest_info.proxmox_vms | length > 0 and
+    add_guest_host_add_host_guest_info.proxmox_vms[0].network |
+    selectattr('name', 'equalto', 'eth0') |
+    map(attribute='ip-addresses') | flatten | length > 1
+
+- name: Add guest to Ansible inventory.
+  ansible.builtin.add_host:
+    name: "{{ add_guest_host_add_host_guest_info.proxmox_vms[0].name }}"
+    groups: "{{ add_guest_host_ct_groups }}"
+    ansible_host: "{{ add_guest_host_add_host_guest_info.proxmox_vms[0].network |
+      selectattr('name', 'equalto', 'eth0') | map(attribute='ip-addresses') | first |
+      selectattr('ip-address-type', 'equalto', 'inet' if
+      add_guest_host_add_host_guest_info.proxmox_vms[0].type == 'lxc' else 'ipv4') |
+      map(attribute='ip-address') | first }}"

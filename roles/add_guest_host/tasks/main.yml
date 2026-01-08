@@ -1,77 +1,27 @@
 ---
-- name: Get Proxmox CT Info.
+- name: Get basic Proxmox Guest Machines info.
   community.general.proxmox_vm_info:
     api_host: "{{ add_guest_host_pm_api_host }}"
     api_user: "{{ add_guest_host_pm_api_user }}"
     api_token_id: "{{ add_guest_host_pm_api_token_name }}"
     api_token_secret: "{{ add_guest_host_pm_api_token_secret }}"
-    type: lxc
-  register: add_guest_host_pve_ct_info
+  register: add_guest_host_basic_pve_info
 
-- name: Get Proxmox VM Info.
-  community.general.proxmox_vm_info:
-    api_host: "{{ add_guest_host_pm_api_host }}"
-    api_user: "{{ add_guest_host_pm_api_user }}"
-    api_token_id: "{{ add_guest_host_pm_api_token_name }}"
-    api_token_secret: "{{ add_guest_host_pm_api_token_secret }}"
-    type: qemu
-  register: add_guest_host_pve_vm_info
-
-- name: Get CT IP addresses.
-  ansible.builtin.command:
-    cmd: "pct exec {{ item.vmid }} hostname -- --all-ip-addresses"
-  changed_when: false
-  delegate_to: "{{ item.node }}"
-  loop: "{{ add_guest_host_pve_ct_info.proxmox_vms | selectattr('status', 'equalto', 'running') |
+- name: Include the add-host tasks.
+  ansible.builtin.include_tasks: add-host.yml
+  loop: "{{ add_guest_host_basic_pve_info.proxmox_vms | selectattr('status', 'equalto', 'running') |
     selectattr('name', 'in', add_guest_host_list) }}"
   loop_control:
-    label: "{{ item.name }}"
-  register: add_guest_host_ct_ip_address
-
-- name: Get VM IP addresses.
-  ansible.builtin.command:
-    cmd: "qm agent {{ item.vmid }} network-get-interfaces"
-  changed_when: false
-  delegate_to: "{{ item.node }}"
-  ignore_errors: true
-  loop: "{{ add_guest_host_pve_vm_info.proxmox_vms | selectattr('status', 'equalto', 'running') |
-    selectattr('name', 'in', add_guest_host_list) }}"
-  loop_control:
-    label: "{{ item.name }}"
-  register: add_guest_host_vm_ip_address
-  retries: 8
-
-- name: Add CT to Ansible inventory.
-  ansible.builtin.add_host:
-    name: "{{ add_guest_host_ct_ip_item.item.name }}"
-    groups: "{{ add_guest_host_ct_groups }}"
-    ansible_host: "{{ add_guest_host_ct_ip_item.stdout | trim }}"
-  loop: "{{ add_guest_host_ct_ip_address.results }}"
-  loop_control:
-    label: "{{ add_guest_host_ct_ip_item.item.name }}"
-    loop_var: add_guest_host_ct_ip_item
-
-- name: Add VM to Ansible inventory.
-  ansible.builtin.add_host:
-    name: "{{ add_guest_host_vm_ip_item.item.name }}"
-    groups: "{{ add_guest_host_ct_groups }}"
-    ansible_host: "{{ add_guest_host_vm_ip_item.stdout | from_json |
-      selectattr('name', 'equalto', 'eth0') | map(attribute='ip-addresses') |
-      first | selectattr('ip-address-type', 'equalto', 'ipv4') | map(attribute='ip-address') | first }}"
-  loop: "{{ add_guest_host_vm_ip_address.results }}"
-  loop_control:
-    label: "{{ add_guest_host_vm_ip_item.item.name }}"
-    loop_var: add_guest_host_vm_ip_item
+    label: "{{ add_guest_host_item.name }}"
+    loop_var: add_guest_host_item
 
 - name: Scan for ssh-hostkeys.
   ansible.builtin.command:
     cmd: "/usr/bin/ssh-keyscan {{ hostvars[item]['ansible_host'] }}"
   changed_when: false
-  loop: "{{ add_guest_host_ct_ip_address.results |
-    map(attribute='item.name') + add_guest_host_vm_ip_address.results | map(attribute='item.name') }}"
+  loop: "{{ add_guest_host_list }}"
   register: add_guest_host_scanned_keys
   until: add_guest_host_scanned_keys.rc == 0
-  # retries: 8
 
 - name: Add ssh-hostkeys to ~/.ssh/known_hosts.
   ansible.builtin.lineinfile:

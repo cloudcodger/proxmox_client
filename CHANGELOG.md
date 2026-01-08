@@ -1,5 +1,10 @@
 # Change log
 
+# version 2.3.3
+
+- Role `add_guest_host` changes.
+    - Fixed limitation what getting IP addresses. Previously used `ansible.builtin.command` delegated to PVE nodes. This required the ability to SSH into the servers (passwordless). Changed to using `community.general.proxmox_vm_info` for this. Multiple calls are required to avoid errors when using `network: true`.
+
 # version 2.3.2
 
 - Role `remove` changes.
