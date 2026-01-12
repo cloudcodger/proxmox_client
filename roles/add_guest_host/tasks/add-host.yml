@@ -8,7 +8,7 @@
     name: "{{ add_guest_host_item.name }}"
     network: true
   register: add_guest_host_add_host_guest_info
-  retries: 5
+  retries: 24
   until: >-
     add_guest_host_add_host_guest_info.failed is false and
     add_guest_host_add_host_guest_info.proxmox_vms is defined and

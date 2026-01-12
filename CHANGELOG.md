@@ -1,5 +1,10 @@
 # Change log
 
+# version 2.3.4
+
+- Role `add_guest_host` changes.
+    - Increased the number of retries for VM info. On a slow proxmox cluster/node it can take a long time for the QEMU guest agent to become ready.
+
 # version 2.3.3
 
 - Role `add_guest_host` changes.
