@@ -1,5 +1,21 @@
 # Change log
 
+# version 3.0.0
+
+- Changed all roles to use the `community.proxmox` collection instead of the now deprecated Proxmox modules removed from `community.general`.
+- Role `cloud_init` changes.
+    - Added `cloud_init_image_storage_content` which had been hard coded to `00` and made the default `import` that is a new storage Content Type starting with Proxmox 8.2.
+    - Added IPv6 options for network1 through network3.
+    - Added ability to provide an IPv6 ULA prefix and have a random IP address generated for an interface.
+    - Renamed many variables to provide better consistence.
+    - Removed `cloud_init_ansible_host*` variables. This turned out to be a bad idea.
+    - Replaced the `cloud_init_vmid` with `cloud_init_image_storage_content` now that PVE has a storage content type of `import`.
+
+- Role `lxc` changes.
+    - Added variables for setting IPv4 and IPv6 addresses on `net1`, `net2` and `net3` interfaces.
+    - Changed `tags` so that any `tags` under `lxc_cts` items will _override_ an `lxc_tags` value. These used to be combined and not be an override. Due to a bug in the current `community.proxmox.proxmox` where the CT always gets updated if you specify `description` or `tags`, this allows the calling playbook to leave out the value and have it omitted so that the module doesn't always update the CT, which has the undesirable effect of changing the MAC address and causing the CT to stop responding on the network.
+    - Removed `lxc_ansible_host*` variables. This turned out to be a bad idea.
+
 # version 2.3.4
 
 - Role `add_guest_host` changes.
@@ -105,7 +121,7 @@
     - Added `cloud_init_find_pm_host`. When set to `true`, `cloud_init_pm_host` is set to the PVE node with the least memory in use for each VM created.
     - Added `cloud_init_tags` for non-construct VMs.
     - Added task to `wait_for_connection` after start loop to wait until VMs are ready.
-    - Remvoed `cloud_init_startup_pause`.
+    - Removed `cloud_init_startup_pause`.
     - Removed the default value for `cloud_init_network_gw`.
     - Changed `cloud_init_construct_vmid_start`.
     - Changed `cloud_init_image` default to `ubuntu-24.04-server.qcow2`.

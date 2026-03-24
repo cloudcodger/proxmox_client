@@ -1,28 +1,88 @@
 ---
-- name: Get node info.
-  community.general.proxmox_node_info:
-    api_host: "{{ lxc_pm_api_host }}"
-    api_user: "{{ lxc_pm_api_user }}"
-    api_token_id: "{{ lxc_pm_api_token_name }}"
-    api_token_secret: "{{ lxc_pm_api_token_secret }}"
-  register: lxc_creator_nodes_info
+- name: Include tasks to find PVE node with most free memory.
+  ansible.builtin.include_tasks: max-free.yml
   when: lxc_find_pm_host
 
-- name: Find PVE node with most free memory.
+- name: Set LXC container facts.
   ansible.builtin.set_fact:
-    lxc_creator_node_current_highest_free: "{{ pvenode_free_mem }}"
-    lxc_pm_host: "{{ item.node }}"
-  loop: "{{ lxc_creator_nodes_info.proxmox_nodes }}"
-  loop_control:
-    label: "{{ item.node }}: {{ pvenode_free_mem }}: free memory"
-  vars:
-    pvenode_free_mem: "{{ item.maxmem | int - item.mem | int }}"
-  when:
-    - lxc_find_pm_host
-    - pvenode_free_mem | int >= lxc_creator_node_current_highest_free | default(0) | int
+    lxc_net0_list: "{{
+      (['name=eth0', 'bridge=' + lxc_network_bridge] if
+        creator_item.ip is defined or creator_item.ip6 is defined or
+        lxc_network_ipv6_ula_prefix is defined else []) +
+      (['ip=' + creator_item.ip] if creator_item.ip is defined else []) +
+      (['gw=' + lxc_network_gw] if (lxc_network_gw is defined and
+        creator_item.ip is defined and creator_item.ip != 'dhcp') else []) +
+      (['ip6=' + creator_item.ip6] if creator_item.ip6 is defined else
+        (['ip6=' + lxc_network_ipv6_ula_prefix |
+          ansible.utils.ipmath(creator_item_random_number) +
+          '/%s' | format(lxc_network_ipv6_ula_prefix | ansible.utils.ipaddr('prefix'))]
+        if lxc_network_ipv6_ula_prefix is defined else [])) +
+      (['gw6=' + lxc_network_gw6] if (lxc_network_gw6 is defined and
+        (lxc_network_ipv6_ula_prefix is defined or
+        (creator_item.ip6 is defined and creator_item.ip6 != 'auto'))) else []) +
+      (['tag=' + lxc_vlan_tag] if lxc_vlan_tag is defined and
+        (creator_item.ip is defined or creator_item.ip6 is defined or
+        lxc_network_ipv6_ula_prefix) else []) }}"
+
+    lxc_net1_list: "{{
+      (['name=eth1', 'bridge=' + lxc_network1_bridge] if
+        creator_item.net1_ip is defined or creator_item.net1_ip6 is defined or
+        lxc_network1_ipv6_ula_prefix is defined else []) +
+      (['ip=' + creator_item.net1_ip] if creator_item.net1_ip is defined else []) +
+      (['gw=' + lxc_network1_gw] if (lxc_network1_gw is defined and
+        creator_item.net1_ip is defined and creator_item.net1_ip != 'dhcp') else []) +
+      (['ip6=' + creator_item.net1_ip6] if creator_item.net1_ip6 is defined else
+        (['ip6=' + lxc_network1_ipv6_ula_prefix |
+          ansible.utils.ipmath(creator_item_random_number) +
+          '/%s' | format(lxc_network1_ipv6_ula_prefix | ansible.utils.ipaddr('prefix'))]
+        if lxc_network1_ipv6_ula_prefix is defined else [])) +
+      (['gw6=' + lxc_network1_gw6] if (lxc_network1_gw6 is defined and
+        (lxc_network1_ipv6_ula_prefix is defined or
+        (creator_item.net1_ip6 is defined and creator_item.net1_ip6 != 'auto'))) else []) +
+      (['tag=' + lxc_vlan1_tag] if lxc_vlan1_tag is defined and
+        (creator_item.net1_ip is defined or creator_item.net1_ip6 is defined or
+        lxc_network1_ipv6_ula_prefix) else []) }}"
+
+    lxc_net2_list: "{{
+      (['name=eth1', 'bridge=' + lxc_network2_bridge] if
+        creator_item.net2_ip is defined or creator_item.net2_ip6 is defined or
+        lxc_network2_ipv6_ula_prefix is defined else []) +
+      (['ip=' + creator_item.net2_ip] if creator_item.net2_ip is defined else []) +
+      (['gw=' + lxc_network2_gw] if (lxc_network2_gw is defined and
+        creator_item.net2_ip is defined and creator_item.net2_ip != 'dhcp') else []) +
+      (['ip6=' + creator_item.net2_ip6] if creator_item.net2_ip6 is defined else
+        (['ip6=' + lxc_network2_ipv6_ula_prefix |
+          ansible.utils.ipmath(creator_item_random_number) +
+          '/%s' | format(lxc_network2_ipv6_ula_prefix | ansible.utils.ipaddr('prefix'))]
+        if lxc_network2_ipv6_ula_prefix is defined else [])) +
+      (['gw6=' + lxc_network2_gw6] if (lxc_network2_gw6 is defined and
+        (lxc_network2_ipv6_ula_prefix is defined or
+        (creator_item.net2_ip6 is defined and creator_item.net2_ip6 != 'auto'))) else []) +
+      (['tag=' + lxc_vlan2_tag] if lxc_vlan2_tag is defined and
+        (creator_item.net2_ip is defined or creator_item.net2_ip6 is defined or
+        lxc_network2_ipv6_ula_prefix) else []) }}"
+
+    lxc_net3_list: "{{
+      (['name=eth1', 'bridge=' + lxc_network3_bridge] if
+        creator_item.net3_ip is defined or creator_item.net3_ip6 is defined or
+        lxc_network3_ipv6_ula_prefix is defined else []) +
+      (['ip=' + creator_item.net3_ip] if creator_item.net3_ip is defined else []) +
+      (['gw=' + lxc_network3_gw] if (lxc_network3_gw is defined and
+        creator_item.net3_ip is defined and creator_item.net3_ip != 'dhcp') else []) +
+      (['ip6=' + creator_item.net3_ip6] if creator_item.net3_ip6 is defined else
+        (['ip6=' + lxc_network3_ipv6_ula_prefix |
+          ansible.utils.ipmath(creator_item_random_number) +
+          '/%s' | format(lxc_network3_ipv6_ula_prefix | ansible.utils.ipaddr('prefix'))]
+        if lxc_network3_ipv6_ula_prefix is defined else [])) +
+      (['gw6=' + lxc_network3_gw6] if (lxc_network3_gw6 is defined and
+        (lxc_network3_ipv6_ula_prefix is defined or
+        (creator_item.net3_ip6 is defined and creator_item.net3_ip6 != 'auto'))) else []) +
+      (['tag=' + lxc_vlan3_tag] if lxc_vlan3_tag is defined and
+        (creator_item.net3_ip is defined or creator_item.net3_ip6 is defined or
+        lxc_network3_ipv6_ula_prefix) else []) }}"
 
 - name: Create LXC container '{{ creator_item.name }}'.
-  community.general.proxmox:
+  community.proxmox.proxmox:
     api_host: "{{ lxc_pm_api_host }}"
     api_user: "{{ lxc_pm_api_user }}"
     api_token_id: "{{ lxc_pm_api_token_name }}"
@@ -39,23 +99,28 @@
     mounts: "{{ creator_item.mounts | default(omit) }}"
     nameserver: "{{ ' '.join(lxc_nameservers) }}"
     netif:
-      net0: "name=eth0,bridge={{ lxc_network_bridge }},ip={{ creator_item.ip | default('dhcp')
-        }}{{ lxc_net0_gw }}{{ ',ip6=' + creator_item.ip6 + lxc_net0_gw6 if
-        creator_item.ip6 is defined }}{{ lxc_net0_vlan }}"
+      net0: "{{ lxc_net0_list | join(',') if
+        lxc_net0_list | length > 0 else omit }}"
+      net1: "{{ lxc_net1_list | join(',') if
+        lxc_net1_list | length > 0 else omit }}"
+      net2: "{{ lxc_net2_list | join(',') if
+        lxc_net2_list | length > 0 else omit }}"
+      net3: "{{ lxc_net3_list | join(',') if
+        lxc_net3_list | length > 0 else omit }}"
     node: "{{ creator_item.pm_host | default(lxc_pm_host) }}"
     ostemplate: "{{ lxc_template_storage }}:vztmpl/{{ lxc_template }}"
     pubkey: "{{ proxmox_client_sshkeys | default(lxc_sshkeys) }}"
     searchdomain: "{{ ' '.join(lxc_searchdomains) }}"
     state: "present"
     swap: "{{ lxc_swap }}"
-    tags: "{{ lxc_tags + creator_item.tags | default([]) }}"
+    tags: "{{ lxc_tags | default(creator_item.tags) | default(omit) }}"
     unprivileged: "{{ lxc_unprivileged }}"
     vmid: "{{ creator_item.vmid | default(omit) }}"
   notify: LXC inventory refresh
   register: lxc_creator
 
 - name: Start LXC container '{{ creator_item.name }}'.
-  community.general.proxmox:
+  community.proxmox.proxmox:
     api_host: "{{ lxc_pm_api_host }}"
     api_user: "{{ lxc_pm_api_user }}"
     api_token_id: "{{ lxc_pm_api_token_name }}"
@@ -66,9 +131,3 @@
   delay: 2
   register: lxc_creator_start
   until: not lxc_creator_start.failed
-
-- name: Include the Host IP tasks '{{ creator_item.name }}'.
-  ansible.builtin.include_tasks: host-ip.yml
-  when:
-    - lxc_ansible_host
-    - lxc_creator_start.changed

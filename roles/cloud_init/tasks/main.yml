@@ -3,39 +3,63 @@
   ansible.builtin.assert:
     that:
       - cloud_init_construct_cidr_start is defined
-      - cloud_init_construct_hosts | length > 0
+      - cloud_init_construct_hosts | length > 0 or cloud_init_find_pm_host is true
     quiet: true
   when: cloud_init_construct_controllers + cloud_init_construct_workers > 0
 
-- name: Construct cloud_init_vms list
+- name: Make sure that all provided ULA prefixes are valid.
+  ansible.builtin.assert:
+    that:
+      - item | ansible.utils.ipaddr('host') != item
+      - item | ansible.utils.ipaddr('network') != item
+    quiet: true
+    fail_msg: "Must be a valid IPv6 network CIDR with no host portion"
+  loop:
+    - "{{ (cloud_init_network_ipv6_ula_prefix | default(omit)) }}"
+    - "{{ (cloud_init_network1_ipv6_ula_prefix | default(omit)) }}"
+    - "{{ (cloud_init_network2_ipv6_ula_prefix | default(omit)) }}"
+    - "{{ (cloud_init_network3_ipv6_ula_prefix | default(omit)) }}"
+
+- name: Construct cloud_init_vms list.
   ansible.builtin.set_fact:
     cloud_init_new_vms:
-      name: "{{ cloud_init_construct_ctrl_prefix if
+      name: "{{ cloud_init_ctrl_prefix if
         generated_vm_is_controller else
-        cloud_init_construct_work_prefix
-        }}{{ item + 1 if generated_vm_is_controller
-        else item + 1 - cloud_init_construct_controllers }}"
+        cloud_init_work_prefix }}{{
+        '%0*d' | format(cloud_init_construct_padding_width, item + 1 if
+          generated_vm_is_controller else
+          item + 1 - cloud_init_construct_controllers) }}"
       control: "{{ generated_vm_is_controller }}"
       genesis: "{{ omit if item > 0 else true }}"
       ip: "{{ cloud_init_construct_cidr_start | ansible.utils.ipmath(item)
         }}/{{ cloud_init_construct_cidr_start | split('/') | last }}"
-      ip1: "{{ '%s/%s' | format(cloud_init_construct_cidr1_start |
-        default('') | ansible.utils.ipmath(item),
-        cloud_init_construct_cidr1_start | split('/') | last)
-        if cloud_init_construct_cidr1_start is defined else omit }}"
-      ip2: "{{ '%s/%s' | format(cloud_init_construct_cidr2_start |
-        default('') | ansible.utils.ipmath(item),
-        cloud_init_construct_cidr2_start | split('/') | last)
-        if cloud_init_construct_cidr2_start is defined else omit }}"
-      ip3: "{{ '%s/%s' | format(cloud_init_construct_cidr3_start |
-        default('') | ansible.utils.ipmath(item),
-        cloud_init_construct_cidr3_start | split('/') | last)
-        if cloud_init_construct_cidr3_start is defined else omit }}"
       ip6: "{{ '%s/%s' | format(cloud_init_construct_cidr6_start |
         default('::/0') | ansible.utils.ipmath(item),
         cloud_init_construct_cidr6_start | split('/') | last)
         if cloud_init_construct_cidr6_start is defined else omit }}"
-      pm_host: "{{ cloud_init_construct_hosts[item % cloud_init_construct_hosts | length] }}"
+      net1_ip: "{{ '%s/%s' | format(cloud_init_construct_cidr_net1_start |
+        default('') | ansible.utils.ipmath(item),
+        cloud_init_construct_cidr_net1_start | split('/') | last)
+        if cloud_init_construct_cidr_net1_start is defined else omit }}"
+      net1_ip6: "{{ '%s/%s' | format(cloud_init_construct_cidr6_net1_start |
+        cloud_init_construct_cidr6_net1_start / split('/') | last)
+        if cloud_init_construct_cidr6_net1_start is defined else omit }}"
+      net2_ip: "{{ '%s/%s' | format(cloud_init_construct_cidr_net2_start |
+        default('') | ansible.utils.ipmath(item),
+        cloud_init_construct_cidr_net2_start | split('/') | last)
+        if cloud_init_construct_cidr_net2_start is defined else omit }}"
+      net2_ip6: "{{ '%s/%s' | format(cloud_init_construct_cidr6_net2_start |
+        cloud_init_construct_cidr6_net2_start / split('/') | last)
+        if cloud_init_construct_cidr6_net2_start is defined else omit }}"
+      net3_ip: "{{ '%s/%s' | format(cloud_init_construct_cidr_net3_start |
+        default('') | ansible.utils.ipmath(item),
+        cloud_init_construct_cidr_net3_start | split('/') | last)
+        if cloud_init_construct_cidr_net3_start is defined else omit }}"
+      net3_ip6: "{{ '%s/%s' | format(cloud_init_construct_cidr6_net3_start |
+        cloud_init_construct_cidr6_net3_start / split('/') | last)
+        if cloud_init_construct_cidr6_net3_start is defined else omit }}"
+      pm_host: "{{ cloud_init_construct_hosts[item % cloud_init_construct_hosts | length] if
+        cloud_init_find_pm_host is false else omit }}"
       tags: "{{ cloud_init_genesis_tags if item == 0 else
         cloud_init_ctrl_tags if generated_vm_is_controller else
         cloud_init_work_tags }}"
@@ -57,6 +81,9 @@
   loop_control:
     loop_var: creator_item
   vars:
+    creator_item_random_number: "{{ (inventory_hostname +
+      (proxmox_client_sshkeys | default(cloud_init_sshkeys))) |
+      hash('md5') | int(base=16) % 2**48 }}"
     generated_vm_is_controller: "{{ creator_item.control | default(false) }}"
 
 - name: Flush handlers.
@@ -83,6 +110,7 @@
   loop_control:
     label: "{{ item.split()[:2] | join(' ') }}"
   when:
+    - cloud_init_keyscan_cmd is changed
     - cloud_init_update_known_hosts is true
     - item[:1] != '#'
 
@@ -92,4 +120,4 @@
   loop: "{{ cloud_init_combined_vms }}"
   loop_control:
     label: "{{ item.name }}"
-  when: cloud_init_bypass_wait_for_connection is true
+  when: cloud_init_wait_for_connection is true

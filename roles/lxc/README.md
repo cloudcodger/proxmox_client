@@ -14,20 +14,11 @@ There are two primary use cases for this role.
 
 A combination of using both `lxc_construct_*` and `lxc_cts` is allowed, but discouraged and not recommended. Using both at the same time makes it difficult for others to follow what is being created. To avoid complexity and confusion, it is recommended to use either the `lxc_cts` _or_ the `lxc_construct_*` settings and not both.
 
-Potential use cases to create;
-
-- a single CT (recommend using `lxc_cts` for this use case)
-- a set of CTs from the value of `lxc_cts`
-- a set of CTs from a "contructed" list using `lxc_construct_*` values
-- a combination of the above settings (not recommended)
-
-To avoid complexity and possible confusion, it is recommended to use either the `lxc_cts` _or_ the `lxc_construct_*` settings and not both.
-
 # Sequencial CTs
 
 Use the `lxc_construct_containers` and `lxc_construct_*` variables to create a set of identical CTs. For example, when creating three CTs named, `ns1`, `ns2` and `ns3` that all have the same CPU sockets/cores, memory, disk size, and tags.
 
-# Individually Defined
+# Individually Defined CTs
 
 This option provides the creation of multiple CTs that differ in the values set under each item in [`lxc_cts`](#lxc_cts).
 
@@ -40,7 +31,7 @@ This option provides the creation of multiple CTs that differ in the values set 
 
 # Role Variables
 
-## Default Variables.
+## Special Default Variables.
 
 Because a Proxmox VE node or cluster will usually set the same values between the `cloud_init` and `lxc` roles
 for many varialbes, when set, these variables will be used as the default value for the associated variable.
@@ -69,47 +60,47 @@ At a minimum, set the following to desired values.
 - `lxc_construct_cidr_start`
 - `lxc_construct_containers`
 - `lxc_construct_hosts`
-- `lxc_construct_vmid_start`
 
 ## All variables.
-
-- `lxc_ansible_host`
-  - `true`: Create a `host_vars` file for the CT and set `ansible_host` in it.
-  - `false`: Don't.
-  - Default: `false`.
-  - When creating CTs that use DHCP, it can be difficult to get the IP address assigned. This allows the role to set `ansible_host` to the IP address of the guest.
-
-- `lxc_ansible_host_vars_paths`
-  - List of directory paths in which to look for `host_vars`.
-  - Default:
-    - "{{ ansible_inventory_sources }}"
-    - "{{ ansible_inventory_sources[0] | dirname }}"
-  - Make sure to set this when setting `lxc_ansible_host` to `true` and the `host_vars` is located at a non-standard path.
-
-- `lxc_ansible_host_vars_dir`
-  - The `host_vars` directory.
-  - Default: The first `host_vars` directory found in `lxc_ansible_host_vars_paths`.
 
 - `lxc_ansible_inventory_refresh`
   - `true`: Perform a `refresh_inventory` after the last task in this role.
   - `false`: Don't.
   - Default: `false`.
   - This is only done when a CT is created or started.
-  - When calling this role in a playbook followed by another play to configure the CTs, a newly created host will not be found in the inventory unless this is done.
-
-- `lxc_bypass_wait_for_connection`
-  - `true`: Do not wait for the new systems to be accessible.
-  - `false`: Do wait.
-  - Default: `false`.
+  - When calling this role in a playbook followed by another play to configure the CTs, a newly created host will not be found unless either an inventory refresh is done or it's added using something like `ansible.builtin.add_host`.
 
 - `lxc_construct_cidr_start`
   - The first IPv4 address in CIDR notation. For example, `lxc_construct_cidr_start: "192.168.1.21"`.
   - Default: None.
-  - Default: `omit`, allowing all CTs to use DHCP.
   - Required when using `lcx_construct_*`.
+
+- `lxc_construct_cidr_net1_start`
+  - The first IPv4 address in CIDR notation for `net1`. For example, `lxc_construct_cidr_net1_start: "192.168.1.21"`.
+  - Default: None.
+
+- `lxc_construct_cidr_net2_start`
+  - The first IPv4 address in CIDR notation for `net2`. For example, `lxc_construct_cidr_net2_start: "192.168.1.21"`.
+  - Default: None.
+
+- `lxc_construct_cidr_net3_start`
+  - The first IPv4 address in CIDR notation for `net3`. For example, `lxc_construct_cidr_net3_start: "192.168.1.21"`.
+  - Default: None.
 
 - `lxc_construct_cidr6_start`
   - The first IPv6 address in CIDR notation.
+  - Default: None.
+
+- `lxc_construct_cidr6_net1_start`
+  - The first IPv6 address in CIDR notation for `net1`.
+  - Default: None.
+
+- `lxc_construct_cidr6_net2_start`
+  - The first IPv6 address in CIDR notation for `net2`.
+  - Default: None.
+
+- `lxc_construct_cidr6_net3_start`
+  - The first IPv6 address in CIDR notation for `net3`.
   - Default: None.
 
 - `lxc_construct_container_prefix`
@@ -127,12 +118,16 @@ At a minimum, set the following to desired values.
 - `lxc_construct_hosts`
   - A list of Proxmox host names on which to create the CTs.
   - Default `[]`.
+  - Required when using `lcx_construct_*` and `lxc_find_pm_host` is `false`.
   - CTs get created by repeatedly looping over this list to set `pm_host` for each one. For example, if the total number of CTs to be created is 12 and there are 3 hosts in this list, each host would end up with 4 CTs.
-  - Required when using `lcx_construct_*`.
+
+- `lxc_construct_padding_width`
+  - How many 0 padded charecter to use in names of CTs.
+  - Default `2`.
 
 - `lxc_construct_vmid_start`
   - The VMID for the first CT and incremented for each one following it.
-  - Default: None (is omitted and PVE will auto assign one).
+  - Default: None.
 
 - `lxc_cores`
   - The number of CPU Cores for all CTs.
@@ -140,11 +135,11 @@ At a minimum, set the following to desired values.
 
 - `lxc_cpus`
   - The limit for the number of CPUs for all CTs.
-  - Default: None (is omitted).
+  - Default: None (is unset/omitted).
 
 - `lxc_cpuunits`
   - The number of CPU Units for all CTs.
-  - Default: None (is omitted).
+  - Default: None (is unset/omitted).
 
 - `lxc_cts`
   - See the [lxc_cts](#lxc_cts) section below for details.
@@ -161,9 +156,8 @@ At a minimum, set the following to desired values.
   - A list of features, current possible features are; `force_rw_sys`, `fuse`, `keyctl`, `mknod`, `mount` and `nesting`.
 
 - `lxc_find_pm_host`
-  - `true`: Set `lxc_pm_host` to the node with the most free memory.
-  - `false`: Don't change `lxc_pm_host` using this check.
-  - This calculation is performed right before creating each VM.
+  - `true`: Set `lxc_pm_host` to the node with the most free memory right before creating each CT.
+  - `false`: Don't change `lxc_pm_host`.
 
 - `lxc_memory`
   - The memory size for all CTs.
@@ -180,11 +174,75 @@ At a minimum, set the following to desired values.
 
 - `lxc_network_gw`
   - The default gateway used for all CTs.
-  - Default: unset and omitted.
+  - Default: None (is unset/omitted).
 
 - `lxc_network_gw6`
-  - The default IPv6 gateway.
-  - Default: unset and omitted.
+  - The default IPv6 gateway used for all CTs.
+  - Default: None (is unset/omitted).
+
+- `lxc_network_ipv6_ula_prefix`
+  - The IPv6 Prefix for Unique Local Addresses (ULA).
+    For example, `fd01:2345:6789:abcd::/64` or `fd01:2345:6789::/48`.
+  - Default: None (is unset/omitted).
+  - The interface suffix will be generated from an MD5 hash of the CT name and the SSH public keys and `48` bits long. This allows for an 80 bit prefix like `fd01:2345:6789:abcd:1::/64` to be used without conficting.
+  - Four character snippets of the hash will be used to fill in the address.
+
+- `lxc_network1_bridge`
+  - The bridge network on `net1`.
+  - Default: `vmbr1`.
+
+- `lxc_network1_gw`
+  - The gateway used on `net1`.
+  - Default: None (is unset/omitted).
+
+- `lxc_network1_gw6`
+  - The IPv6 gateway used on `net1`.
+  - Default: None (is unset/omitted).
+
+- `lxc_network1_ipv6_ula_prefix`
+  - The IPv6 Prefix for Unique Local Addresses (ULA) on `net1`.
+    For example, `fd01:2345:6789:abcd::/64` or `fd01:2345:6789::/48`.
+  - Default: None (is unset/omitted).
+  - The interface suffix will be generated from an MD5 hash of the VM name and the SSH public keys and `48` bits long. This allows for an 80 bit prefix like `fd01:2345:6789:abcd:1::/64` to be used without conficting.
+  - Four character snippets of the hash will be used to fill in the address.
+
+- `lxc_network2_bridge`
+  - The bridge network on `net2`.
+  - Default: `vmbr2`.
+
+- `lxc_network2_gw`
+  - The gateway used on `net2`.
+  - Default: None (is unset/omitted).
+
+- `lxc_network2_gw6`
+  - The IPv6 gateway used on `net2`.
+  - Default: None (is unset/omitted).
+
+- `lxc_network2_ipv6_ula_prefix`
+  - The IPv6 Prefix for Unique Local Addresses (ULA) on `net2`.
+    For example, `fd01:2345:6789:abcd::/64` or `fd01:2345:6789::/48`.
+  - Default: None (is unset/omitted).
+  - The interface suffix will be generated from an MD5 hash of the VM name and the SSH public keys and `48` bits long. This allows for an 80 bit prefix like `fd01:2345:6789:abcd:1::/64` to be used without conficting.
+  - Four character snippets of the hash will be used to fill in the address.
+
+- `lxc_network3_bridge`
+  - The bridge network on `net3`.
+  - Default: `vmbr3`.
+
+- `lxc_network3_gw`
+  - The gateway used on `net3`.
+  - Default: None (is unset/omitted).
+
+- `lxc_network3_gw6`
+  - The IPv6 gateway used on `net3`.
+  - Default: None (is unset/omitted).
+
+- `lxc_network3_ipv6_ula_prefix`
+  - The IPv6 Prefix for Unique Local Addresses (ULA) on `net3`.
+    For example, `fd01:2345:6789:abcd::/64` or `fd01:2345:6789::/48`.
+  - Default: None (is unset/omitted).
+  - The interface suffix will be generated from an MD5 hash of the VM name and the SSH public keys and `48` bits long. This allows for an 80 bit prefix like `fd01:2345:6789:abcd:1::/64` to be used without conficting.
+  - Four character snippets of the hash will be used to fill in the address.
 
 - `lxc_pm_api_host`
   - Proxmox host for API connection.
@@ -223,16 +281,16 @@ At a minimum, set the following to desired values.
 
 - `lxc_sshkeys`
   - A multi-line string containing a list of public SSH keys for the `root` user login on all CTs.
-  - Default: unset and omitted.
+  - Default: None (is unset/omitted).
   - Required. Because leaving this empty will result in CTs to which you cannot login.
-  - See `pubkey` variable for the [community.general.proxmox](https://docs.ansible.com/ansible/latest/collections/community/general/proxmox_module.html) module.
+  - See `pubkey` variable for the [community.proxmox.proxmox](https://docs.ansible.com/ansible/latest/collections/community/proxmox/proxmox_module.html) module.
 
 - `lxc_storage`
   - The Datacenter storage for all CT disks.
   - Default: `local-thin`.
   - This storage _must_ exist on each PVE node on which VMs are created and be configured to support the "Container" content type.
   - For PVE clusters, consider using shared storage for better migration support.
-  - Common values include: `local`, `local-thin`, `local-zfs` and `ceph0`.
+  - Common values include: `local-lvm`, `local-thin`, `local-zfs` and `ceph`.
 
 - `lxc_swap`
   - The size allocated to swap on all CTs.
@@ -240,7 +298,7 @@ At a minimum, set the following to desired values.
 
 - `lxc_tags`
   - A list of Proxmox tags to give all CTs.
-  - Default: `[]`.
+  - Default: None (is unset/omitted).
 
 - `lxc_template`
   - Name of the CT Template.
@@ -262,9 +320,26 @@ At a minimum, set the following to desired values.
   - Default: `true`.
 
 - `lxc_vlan_tag`
-  - A VLAN tag number for all CT networks.
-  - Default: Not set
+  - A VLAN tag number for all CT `net0` networks.
+  - Default: None (is unset/omitted).
   - This also gets prepended to any provided VMIDs.
+
+- `lxc_vlan1_tag`
+  - A VLAN tag number for all CT `net1` networks.
+  - Default: None (is unset/omitted).
+
+- `lxc_vlan2_tag`
+  - A VLAN tag number for all CT `net2` networks.
+  - Default: None (is unset/omitted).
+
+- `lxc_vlan3_tag`
+  - A VLAN tag number for all CT `net3` networks.
+  - Default: None (is unset/omitted).
+
+- `lxc_wait_for_connection`
+  - `true`: Wait for the new systems to be accessible.
+  - `false`: Do not wait.
+  - Default: `true`.
 
 # Special Variable Notes
 
@@ -281,7 +356,7 @@ This variable must be a list of hashs that contain specific key/value pairs defi
 Required keys:
 
 - `name`
-  - The name of the VM and becomes the hostname of the system.
+  - The name of the CT and becomes the hostname of the system.
 
 Optional keys:
 
@@ -289,14 +364,37 @@ Optional keys:
   - Becomes the Notes for a CT in the PVE UI Summary page.
 
 - `ip`
-  - Static IPv4 address (in CIDR notation).
-  - Default: `dhcp`.
+  - Static IPv4 address (in CIDR notation) for `net0`.
 
 - `ip6`
-  - Static IPv6 address (in CIDR notation).
+  - Static IPv6 address (in CIDR notation) for `net0`.
 
 - `mounts`
   - A list of optional mounts for this CT in the format of a hash. See the first example.
+
+- `net1_ip`
+  - Static IPv4 address (in CIDR notation) for `net1`.
+  - The `net1` interface is not configured when this and `net1_ip6` are not set.
+
+- `net1_ip6`
+  - Static IPv6 address (in CIDR notation) for `net1`.
+  - The `net1` interface is not configured when this and `net1_ip` are not set.
+
+- `net2_ip`
+  - Static IPv4 address (in CIDR notation) for `net2`.
+  - The `net2` interface is not configured when this and `net2_ip6` are not set.
+
+- `net2_ip6`
+  - Static IPv6 address (in CIDR notation) for `net2`.
+  - The `net2` interface is not configured when this and `net2_ip` are not set.
+
+- `net3_ip`
+  - Static IPv4 address (in CIDR notation) for `net3`.
+  - The `net3` interface is not configured when this and `net3_ip6` are not set.
+
+- `net3_ip6`
+  - Static IPv6 address (in CIDR notation) for `net3`.
+  - The `net3` interface is not configured when this and `net3_ip` are not set.
 
 - `pm_host`
   - Overrides `lxc_pm_host` for this CT.
@@ -305,7 +403,7 @@ Optional keys:
   - Overrides `lxc_storage` for this CT.
 
 - `tags`
-  - Combined with `lxc_tags` for this CT.
+  - Overrides `lxc_tags` for this CT.
 
 - `vmid`
   - A _unique_ VMID number within the Datacenter.
@@ -314,7 +412,7 @@ Optional keys:
 
 # Dependencies
 
-This role depends on the [community.general.proxmox](https://docs.ansible.com/ansible/latest/collections/community/general/proxmox_module.html) module.
+This role depends on the [community.proxmox.proxmox](https://docs.ansible.com/ansible/latest/collections/community/proxmox/proxmox_module.html) module.
 
 # Example Playbooks
 

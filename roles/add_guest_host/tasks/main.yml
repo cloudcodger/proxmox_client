@@ -1,6 +1,6 @@
 ---
 - name: Get basic Proxmox Guest Machines info.
-  community.general.proxmox_vm_info:
+  community.proxmox.proxmox_vm_info:
     api_host: "{{ add_guest_host_pm_api_host }}"
     api_user: "{{ add_guest_host_pm_api_user }}"
     api_token_id: "{{ add_guest_host_pm_api_token_name }}"

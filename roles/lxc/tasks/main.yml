@@ -12,16 +12,52 @@
     quiet: true
   when: lxc_construct_containers > 0
 
-- name: Construct containers list
+- name: Make sure that all provided ULA prefixes are valid.
+  ansible.builtin.assert:
+    that:
+      - item | ansible.utils.ipaddr('host') != item
+      - item | ansible.utils.ipaddr('network') != item
+    quiet: true
+    fail_msg: "Must be a valid IPv6 network CIDR with no host portion"
+  loop:
+    - "{{ (lxc_network_ipv6_ula_prefix | default(omit)) }}"
+    - "{{ (lxc_network1_ipv6_ula_prefix | default(omit)) }}"
+    - "{{ (lxc_network2_ipv6_ula_prefix | default(omit)) }}"
+    - "{{ (lxc_network3_ipv6_ula_prefix | default(omit)) }}"
+
+- name: Construct containers list.
   ansible.builtin.set_fact:
     lxc_new_cts:
-      name: "{{ lxc_construct_container_prefix }}{{ item + 1 }}"
+      name: "{{ lxc_construct_container_prefix }}{{
+        '%0*d' | format(lxc_construct_padding_width, item + 1) }}"
       ip: "{{ lxc_construct_cidr_start | ansible.utils.ipmath(item)
         }}/{{ lxc_construct_cidr_start | split('/') | last }}"
       ip6: "{{ '%s/%s' | format(lxc_construct_cidr6_start | default('::/0') |
         ansible.utils.ipmath(item), lxc_construct_cidr6_start | split('/') |
         last) if lxc_construct_cidr6_start is defined else omit }}"
-      pm_host: "{{ omit if not lxc_construct_hosts else lxc_construct_hosts[item % lxc_construct_hosts | length] }}"
+      net1_ip: "{{ '%s/%s' | format(lxc_construct_cidr_net1_start | default('') |
+        ansible.utils.ipmath(item),
+        lxc_construct_cidr_net1_start | split('/') | last)
+        if lxc_construct_cidr_net1_start is defined else omit }}"
+      net1_ip6: "{{ '%s/%s' | format(lxc_construct_cidr6_net1_start |
+        lxc_construct_cidr6_net1_start / split('/') | last)
+        if lxc_construct_cidr6_net1_start is defined else omit }}"
+      net2_ip: "{{ '%s/%s' | format(lxc_construct_cidr_net2_start |
+        default('') | ansible.utils.ipmath(item),
+        lxc_construct_cidr_net2_start | split('/') | last)
+        if lxc_construct_cidr_net2_start is defined else omit }}"
+      net2_ip6: "{{ '%s/%s' | format(lxc_construct_cidr6_net2_start |
+        lxc_construct_cidr6_net2_start / split('/') | last)
+        if lxc_construct_cidr6_net2_start is defined else omit }}"
+      net3_ip: "{{ '%s/%s' | format(lxc_construct_cidr_net3_start |
+        default('') | ansible.utils.ipmath(item),
+        lxc_construct_cidr_net3_start | split('/') | last)
+        if lxc_construct_cidr_net3_start is defined else omit }}"
+      net3_ip6: "{{ '%s/%s' | format(lxc_construct_cidr6_net3_start |
+        lxc_construct_cidr6_net3_start / split('/') | last)
+        if lxc_construct_cidr6_net3_start is defined else omit }}"
+      pm_host: "{{ lxc_construct_hosts[item % lxc_construct_hosts | length] if
+        lxc_find_pm_host is false else omit }}"
       tags: "{{ lxc_construct_ct0_tags if lxc_construct_ct0_tags and item < 1 else
         omit }}"
       vmid: "{{ '%03d' | format(lxc_construct_vmid_start + item)
@@ -31,14 +67,18 @@
 
 - name: Combine constructed containers and containers.
   ansible.builtin.set_fact:
-    lxc_combined_lxcs: "{{ lxc_cts + lxc_generated.results
-      | map(attribute='ansible_facts.lxc_new_cts') }}"
+    lxc_combined_lxcs: "{{ lxc_cts + lxc_generated.results |
+      map(attribute='ansible_facts.lxc_new_cts') }}"
 
 - name: Include the creation tasks.
   ansible.builtin.include_tasks: creator.yml
   loop: "{{ lxc_combined_lxcs }}"
   loop_control:
     loop_var: creator_item
+  vars:
+    creator_item_random_number: "{{ (inventory_hostname +
+      (proxmox_client_sshkeys | default(lxc_sshkeys))) |
+      hash('md5') | int(base=16) % 2**48 }}"
 
 - name: Flush handlers.
   ansible.builtin.meta: flush_handlers
@@ -73,4 +113,4 @@
   loop: "{{ lxc_combined_lxcs }}"
   loop_control:
     label: "{{ item.name }}"
-  when: lxc_bypass_wait_for_connection is true
+  when: lxc_wait_for_connection is true

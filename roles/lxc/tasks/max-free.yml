@@ -1,0 +1,20 @@
+---
+- name: Get node info.
+  community.proxmox.proxmox_node_info:
+    api_host: "{{ lxc_pm_api_host }}"
+    api_user: "{{ lxc_pm_api_user }}"
+    api_token_id: "{{ lxc_pm_api_token_name }}"
+    api_token_secret: "{{ lxc_pm_api_token_secret }}"
+  register: lxc_creator_nodes_info
+
+- name: Find PVE node with most free memory.
+  ansible.builtin.set_fact:
+    lxc_creator_node_current_highest_free: "{{ item.maxmem | int - item.mem | int }}"
+    lxc_pm_host: "{{ item.node }}"
+  loop: "{{ lxc_creator_nodes_info.proxmox_nodes }}"
+  loop_control:
+    index_var: nodes_idx
+    label: "{{ item.node }}: max={{ item.maxmem }} used={{ item.mem }} free={{
+      item.maxmem | int - item.mem | int }}"
+  when: nodes_idx == 0 or
+    (item.maxmem | int - item.mem | int) >= lxc_creator_node_current_highest_free | default(0)

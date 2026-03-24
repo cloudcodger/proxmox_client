@@ -26,7 +26,7 @@
   when: remove_from_ssh_known_hosts is true
 
 - name: Get Proxmox guests Info.
-  community.general.proxmox_vm_info:
+  community.proxmox.proxmox_vm_info:
     api_host: "{{ remove_pm_api_host }}"
     api_user: "{{ remove_pm_api_user }}"
     api_token_id: "{{ remove_pm_api_token_name }}"
@@ -34,7 +34,7 @@
   register: remove_pve_vm_info
 
 - name: Unconditionally shut down the LXC containers.
-  community.general.proxmox:
+  community.proxmox.proxmox:
     api_host: "{{ remove_pm_api_host }}"
     api_user: "{{ remove_pm_api_user }}"
     api_token_id: "{{ remove_pm_api_token_name }}"
@@ -49,7 +49,7 @@
     pause: 1
 
 - name: Unconditionally shut down the VMs.
-  community.general.proxmox_kvm:
+  community.proxmox.proxmox_kvm:
     api_host: "{{ remove_pm_api_host }}"
     api_user: "{{ remove_pm_api_user }}"
     api_token_id: "{{ remove_pm_api_token_name }}"
@@ -64,7 +64,7 @@
     pause: 1
 
 - name: Remove the LXC Containers.
-  community.general.proxmox:
+  community.proxmox.proxmox:
     api_host: "{{ remove_pm_api_host }}"
     api_user: "{{ remove_pm_api_user }}"
     api_token_id: "{{ remove_pm_api_token_name }}"
@@ -79,7 +79,7 @@
   until: not remove_results.failed
 
 - name: Remove the VMs.
-  community.general.proxmox_kvm:
+  community.proxmox.proxmox_kvm:
     api_host: "{{ remove_pm_api_host }}"
     api_user: "{{ remove_pm_api_user }}"
     api_token_id: "{{ remove_pm_api_token_name }}"

@@ -1,28 +1,64 @@
 ---
-- name: Get node info.
-  community.general.proxmox_node_info:
-    api_host: "{{ cloud_init_pm_api_host }}"
-    api_user: "{{ cloud_init_pm_api_user }}"
-    api_token_id: "{{ cloud_init_pm_api_token_name }}"
-    api_token_secret: "{{ cloud_init_pm_api_token_secret }}"
-  register: cloud_init_creator_nodes_info
+- name: Include tasks to find PVE node with most free memory.
+  ansible.builtin.include_tasks: max-free.yml
   when: cloud_init_find_pm_host
 
-- name: Find PVE node with most free memory.
+- name: Set KVM facts.
   ansible.builtin.set_fact:
-    cloud_init_creator_node_current_highest_free: "{{ pvenode_free_mem }}"
-    cloud_init_pm_host: "{{ item.node }}"
-  loop: "{{ cloud_init_creator_nodes_info.proxmox_nodes }}"
-  loop_control:
-    label: "{{ item.node }}: {{ pvenode_free_mem }}: free memory"
-  vars:
-    pvenode_free_mem: "{{ item.maxmem | int - item.mem | int }}"
-  when:
-    - cloud_init_find_pm_host
-    - pvenode_free_mem | int >= cloud_init_creator_node_current_highest_free | default(0) | int
+    cloud_init_ipconfig0_list: "{{
+      (['ip=' + creator_item.ip] if creator_item.ip is defined else []) +
+      (['gw=' + cloud_init_network_gw] if (cloud_init_network_gw is defined and
+        creator_item.ip is defined and creator_item.ip != 'dhcp') else []) +
+      (['ip6=' + creator_item.ip6] if creator_item.ip6 is defined else
+        (['ip6=' + cloud_init_network_ipv6_ula_prefix |
+          ansible.utils.ipmath(creator_item_random_number) +
+          '/%s' | format(cloud_init_network_ipv6_ula_prefix | ansible.utils.ipaddr('prefix'))]
+        if cloud_init_network_ipv6_ula_prefix is defined else [])) +
+      (['gw6=' + cloud_init_network_gw6] if (cloud_init_network_gw6 is defined and
+        (cloud_init_network_ipv6_ula_prefix is defined or
+        (creator_item.ip6 is defined and creator_item.ip6 != 'auto'))) else []) }}"
+
+    cloud_init_ipconfig1_list: "{{
+      (['ip=' + creator_item.net1_ip] if creator_item.net1_ip is defined else []) +
+      (['gw=' + cloud_init_network1_gw] if (cloud_init_network1_gw is defined and
+        creator_item.net1_ip is defined and creator_item.net1_ip != 'dhcp') else []) +
+      (['ip6=' + creator_item.net1_ip6] if creator_item.net1_ip6 is defined else
+        (['ip6=' + cloud_init_network1_ipv6_ula_prefix |
+          ansible.utils.ipmath(creator_item_random_number) +
+          '/%s' | format(cloud_init_network1_ipv6_ula_prefix | ansible.utils.ipaddr('prefix'))]
+        if cloud_init_network1_ipv6_ula_prefix is defined else [])) +
+      (['gw6=' + cloud_init_network1_gw6] if (cloud_init_network1_gw6 is defined and
+        (cloud_init_network1_ipv6_ula_prefix is defined or
+        (creator_item.net1_ip6 is defined and creator_item.net1_ip6 != 'auto'))) else []) }}"
+
+    cloud_init_ipconfig2_list: "{{
+      (['ip=' + creator_item.net2_ip] if creator_item.net2_ip is defined else []) +
+      (['gw=' + cloud_init_network2_gw] if (cloud_init_network2_gw is defined and
+        creator_item.net2_ip is defined and creator_item.net2_ip != 'dhcp') else []) +
+      (['ip6=' + creator_item.net2_ip6] if creator_item.net2_ip6 is defined else
+        (['ip6=' + cloud_init_network2_ipv6_ula_prefix |
+          ansible.utils.ipmath(creator_item_random_number) +
+          '/%s' | format(cloud_init_network2_ipv6_ula_prefix | ansible.utils.ipaddr('prefix'))]
+        if cloud_init_network2_ipv6_ula_prefix is defined else [])) +
+      (['gw6=' + cloud_init_network2_gw6] if (cloud_init_network2_gw6 is defined and
+        (cloud_init_network2_ipv6_ula_prefix is defined or
+        (creator_item.net2_ip6 is defined and creator_item.net2_ip6 != 'auto'))) else []) }}"
+
+    cloud_init_ipconfig3_list: "{{
+      (['ip=' + creator_item.net3_ip] if creator_item.net3_ip is defined else []) +
+      (['gw=' + cloud_init_network3_gw] if (cloud_init_network3_gw is defined and
+        creator_item.net3_ip is defined and creator_item.net3_ip != 'dhcp') else []) +
+      (['ip6=' + creator_item.net3_ip6] if creator_item.net3_ip6 is defined else
+        (['ip6=' + cloud_init_network3_ipv6_ula_prefix |
+          ansible.utils.ipmath(creator_item_random_number) +
+          '/%s' | format(cloud_init_network3_ipv6_ula_prefix | ansible.utils.ipaddr('prefix'))]
+        if cloud_init_network3_ipv6_ula_prefix is defined else [])) +
+      (['gw6=' + cloud_init_network3_gw6] if (cloud_init_network3_gw6 is defined and
+        (cloud_init_network3_ipv6_ula_prefix is defined or
+        (creator_item.net3_ip6 is defined and creator_item.net3_ip6 != 'auto'))) else []) }}"
 
 - name: "Create Virtual Machine '{{ creator_item.name }}'."
-  community.general.proxmox_kvm:
+  community.proxmox.proxmox_kvm:
     api_host: "{{ cloud_init_pm_api_host }}"
     api_user: "{{ cloud_init_pm_api_user }}"
     api_token_id: "{{ cloud_init_pm_api_token_name }}"
@@ -36,33 +72,33 @@
     ide:
       ide2: "{{ cloud_init_disk_storage }}:cloudinit"
     ipconfig:
-      ipconfig0: "ip={{ creator_item.ip | default('dhcp') }}{{ cloud_init_ip_network_gw }}{{
-        ',ip6=' + creator_item.ip6 + cloud_init_ip_network_gw6 if creator_item.ip6 is defined }}"
-      ipconfig1: "{{ 'ip=%s%s' | format(creator_item.ip1, cloud_init_ip_network_gw1)
-        if creator_item.ip1 is defined else omit }}"
-      ipconfig2: "{{ 'ip=%s%s' | format(creator_item.ip2, cloud_init_ip_network_gw2)
-        if creator_item.ip2 is defined else omit }}"
-      ipconfig3: "{{ 'ip=%s%s' | format(creator_item.ip3, cloud_init_ip_network_gw3)
-        if creator_item.ip3 is defined else omit }}"
+      ipconfig0: "{{ cloud_init_ipconfig0_list | join(',') if
+        cloud_init_ipconfig0_list | length > 0 else omit }}"
+      ipconfig1: "{{ cloud_init_ipconfig1_list | join(',') if
+        cloud_init_ipconfig1_list | length > 0 else omit }}"
+      ipconfig2: "{{ cloud_init_ipconfig2_list | join(',') if
+        cloud_init_ipconfig2_list | length > 0 else omit }}"
+      ipconfig3: "{{ cloud_init_ipconfig3_list | join(',') if
+        cloud_init_ipconfig3_list | length > 0 else omit }}"
     memory: "{{ cloud_init_ctrl_memory if generated_vm_is_controller else cloud_init_work_memory }}"
     name: "{{ creator_item.name }}"
     nameservers: "{{ cloud_init_nameservers }}"
     net:
-      net0: "virtio,bridge={{ cloud_init_network_bridge }}{{ cloud_init_ip_vlan }}"
-      net1: "{{ 'virtio,bridge=%s%s' | format(cloud_init_network1_bridge, cloud_init_ip_vlan1)
-        if creator_item.ip1 is defined else omit }}"
-      net2: "{{ 'virtio,bridge=%s%s' | format(cloud_init_network2_bridge, cloud_init_ip_vlan2)
-        if creator_item.ip2 is defined else omit }}"
-      net3: "{{ 'virtio,bridge=%s%s' | format(cloud_init_network3_bridge, cloud_init_ip_vlan3)
-        if creator_item.ip3 is defined else omit }}"
-      # net1: "virtio,bridge={{ cloud_init_network1_bridge }}"
+      net0: "virtio,bridge={{ cloud_init_network_bridge }}{{ cloud_init_var_vlan }}"
+      net1: "{{ 'virtio,bridge=%s%s' | format(cloud_init_network1_bridge, cloud_init_var_vlan1)
+        if cloud_init_ipconfig1_list | length > 0 else omit }}"
+      net2: "{{ 'virtio,bridge=%s%s' | format(cloud_init_network2_bridge, cloud_init_var_vlan2)
+        if cloud_init_ipconfig2_list | length > 0 else omit }}"
+      net3: "{{ 'virtio,bridge=%s%s' | format(cloud_init_network3_bridge, cloud_init_var_vlan3)
+        if cloud_init_ipconfig3_list | length > 0 else omit }}"
     node: "{{ creator_item.pm_host | default(cloud_init_pm_host) }}"
     searchdomains: "{{ cloud_init_searchdomains }}"
     serial:
       serial0: "socket"
     scsi:
       scsi0: "{{ creator_item.storage | default(cloud_init_storage)
-        }}:0,format=raw,{{ cloud_init_import_from }}"
+        }}:0,format=raw,import-from={{ cloud_init_image_storage }}:{{
+        cloud_init_image_storage_content }}/{{ cloud_init_image }}"
     scsihw: "virtio-scsi-pci"
     sshkeys: "{{ proxmox_client_sshkeys | default(cloud_init_sshkeys) | default(omit) }}"
     sockets: "{{ cloud_init_ctrl_sockets if generated_vm_is_controller else cloud_init_work_sockets }}"
@@ -77,7 +113,7 @@
   register: cloud_init_creator_qemu_vm
 
 - name: "Resize the disk for the Virtual Machine '{{ creator_item.name }}'."
-  community.general.proxmox_disk:
+  community.proxmox.proxmox_disk:
     api_host: "{{ cloud_init_pm_api_host }}"
     api_user: "{{ cloud_init_pm_api_user }}"
     api_token_id: "{{ cloud_init_pm_api_token_name }}"
@@ -89,7 +125,7 @@
     vmid: "{{ cloud_init_creator_qemu_vm.vmid }}"
 
 - name: "Start the Virtual Machine '{{ creator_item.name }}'."
-  community.general.proxmox_kvm:
+  community.proxmox.proxmox_kvm:
     api_host: "{{ cloud_init_pm_api_host }}"
     api_user: "{{ cloud_init_pm_api_user }}"
     api_token_id: "{{ cloud_init_pm_api_token_name }}"
@@ -99,9 +135,3 @@
   delay: 2
   register: cloud_init_creator_qemu_start
   until: not cloud_init_creator_qemu_start.failed
-
-- name: "Include the Host IP tasks '{{ creator_item.name }}'."
-  ansible.builtin.include_tasks: host-ip.yml
-  when:
-    - cloud_init_ansible_host
-    - cloud_init_creator_qemu_start.changed
