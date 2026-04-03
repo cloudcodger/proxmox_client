@@ -7,13 +7,41 @@
     api_token_secret: "{{ add_guest_host_pm_api_token_secret }}"
   register: add_guest_host_basic_pve_info
 
-- name: Include the add-host tasks.
-  ansible.builtin.include_tasks: add-host.yml
+- name: Get Proxmox VM info with Network info.
+  community.proxmox.proxmox_vm_info:
+    api_host: "{{ add_guest_host_pm_api_host }}"
+    api_user: "{{ add_guest_host_pm_api_user }}"
+    api_token_id: "{{ add_guest_host_pm_api_token_name }}"
+    api_token_secret: "{{ add_guest_host_pm_api_token_secret }}"
+    name: "{{ item.name }}"
+    network: true
   loop: "{{ add_guest_host_basic_pve_info.proxmox_vms | selectattr('status', 'equalto', 'running') |
     selectattr('name', 'in', add_guest_host_list) }}"
   loop_control:
-    label: "{{ add_guest_host_item.name }}"
-    loop_var: add_guest_host_item
+    label: "{{ item.name }}"
+  register: add_guest_host_add_host_guest_info
+  retries: 24
+  until: >-
+    add_guest_host_add_host_guest_info.failed is false and
+    add_guest_host_add_host_guest_info.proxmox_vms is defined and
+    add_guest_host_add_host_guest_info.proxmox_vms | length > 0 and
+    add_guest_host_add_host_guest_info.proxmox_vms[0].network |
+    selectattr('name', 'equalto', 'eth0') |
+    map(attribute='ip-addresses') | flatten | length > 1
+
+- name: Add guest to Ansible inventory.
+  ansible.builtin.add_host:
+    name: "{{ item.item.name }}"
+    groups: "{{ add_guest_host_ct_groups }}"
+    ansible_host: "{{ item.proxmox_vms |
+      map(attribute='network') | first |
+      selectattr('name', 'equalto', 'eth0') |
+      map(attribute='ip-addresses') | first |
+      selectattr('ip-address-type', 'equalto', 'inet' if item.item.type == 'lxc' else 'ipv4') |
+      map(attribute='ip-address') | first }}"
+  loop: "{{ add_guest_host_add_host_guest_info.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
 
 - name: Scan for ssh-hostkeys.
   ansible.builtin.command:
@@ -22,6 +50,7 @@
   loop: "{{ add_guest_host_list }}"
   register: add_guest_host_scanned_keys
   until: add_guest_host_scanned_keys.rc == 0
+  when: add_guest_host_to_ssh_known_hosts is true
 
 - name: Add ssh-hostkeys to ~/.ssh/known_hosts.
   ansible.builtin.lineinfile:
@@ -29,4 +58,6 @@
     regexp: "^{{ item.split()[:2] | join(' ') }}"
     line: "{{ item }}"
   loop: "{{ add_guest_host_scanned_keys.results | map(attribute='stdout_lines') | flatten }}"
-  when: item[:1] != '#'
+  when:
+    - add_guest_host_to_ssh_known_hosts is true
+    - item[:1] != '#'

@@ -1,5 +1,11 @@
 # Change log
 
+# version 3.0.1
+
+- Role `add_guest_host` changes.
+    - Fixed issue where `add_guest_host_to_ssh_known_hosts` was ignored.
+    - Merged the `add-host.yml` tasks back into `mail.yml`.
+
 # version 3.0.0
 
 - Changed all roles to use the `community.proxmox` collection instead of the now deprecated Proxmox modules removed from `community.general`.
