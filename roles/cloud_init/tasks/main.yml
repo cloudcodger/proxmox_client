@@ -10,7 +10,7 @@
 - name: Make sure that all provided ULA prefixes are valid.
   ansible.builtin.assert:
     that:
-      - item | ansible.utils.ipaddr('host') != item
+      - (item | ansible.utils.ipaddr('int')) | int % (2**64) < 2**16
       - item | ansible.utils.ipaddr('network') != item
     quiet: true
     fail_msg: "Must be a valid IPv6 network CIDR with no host portion"
@@ -81,7 +81,7 @@
   loop_control:
     loop_var: creator_item
   vars:
-    creator_item_random_number: "{{ (inventory_hostname +
+    creator_item_random_number: "{{ (creator_item.name +
       (proxmox_client_sshkeys | default(cloud_init_sshkeys))) |
       hash('md5') | int(base=16) % 2**48 }}"
     generated_vm_is_controller: "{{ creator_item.control | default(false) }}"
@@ -99,7 +99,9 @@
   loop_control:
     label: "{{ item }}: {{ hostvars[item]['ansible_host'] | default('none') }}"
   until: not cloud_init_keyscan_cmd.failed
-  when: cloud_init_update_known_hosts is true
+  when:
+    - cloud_init_update_known_hosts is true
+    - hostvars[item]['ansible_host'] is defined
 
 - name: Add hostkeys to known_hosts
   ansible.builtin.lineinfile:

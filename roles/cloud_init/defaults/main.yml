@@ -48,7 +48,7 @@ cloud_init_storage: "{{ proxmox_client_storage | default('local-thin') }}"
 cloud_init_tags: []
 cloud_init_update_known_hosts: "{{ proxmox_client_update_known_hosts | default(true) }}"
 cloud_init_vms: []
-cloud_init_wait_for_connection: true
+cloud_init_wait_for_connection: false
 
 cloud_init_work_cores: '2'
 cloud_init_work_disk_size: '12G'

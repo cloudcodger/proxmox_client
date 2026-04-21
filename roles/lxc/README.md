@@ -339,7 +339,7 @@ At a minimum, set the following to desired values.
 - `lxc_wait_for_connection`
   - `true`: Wait for the new systems to be accessible.
   - `false`: Do not wait.
-  - Default: `true`.
+  - Default: `false`.
 
 # Special Variable Notes
 

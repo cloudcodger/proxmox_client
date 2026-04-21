@@ -1,7 +1,7 @@
 ---
 namespace: cloudcodger
 name: proxmox_client
-version: 3.0.1
+version: 3.0.2
 readme: README.md
 authors:
   - Cloud Codger <cloudcodger@pm.me>

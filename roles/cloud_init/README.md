@@ -379,7 +379,7 @@ At a minimum, set the following to desired values.
 - `cloud_init_wait_for_connection`
   - `true`: Wait for the new systems to be accessible.
   - `false`: Do not wait.
-  - Default: `true`.
+  - Default: `false`.
 
 - `cloud_init_work_cores`
   - The number of CPU Cores for VMs with `control: false`.

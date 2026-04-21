@@ -1,5 +1,12 @@
 # Change log
 
+# version 3.0.2
+
+- Fixed assertions for ipv6_ula_prefixes so they can be up to 80 bits even for /64 network for both `cloud_init` and `lxc` roles.
+- Fixed `creator_item_random_number` calculation to use the hostname being created for both `cloud_init` and `lxc` roles. It was erroneously the hostname of the localhost doing the creation.
+- Added a `when: hostvars[item]['ansible_host'] is defined` to `Scan for ssh-hostkeys` for both `cloud_init` and `lxc` roles to skip hosts where it isn't defined, since that is used in the command. This prevents having to set `cloud_init_update_known_hosts` or `lxc_update_known_hosts` to `false` more often.
+- Changed the default for `cloud_init_wait_for_connection` and `lxc_wait_for_connection` to `false`. Because settings must be correct for this to work, it makes more sense to set it when desired than to have to set this when not desired.
+
 # version 3.0.1
 
 - Role `add_guest_host` changes.
