@@ -1,5 +1,9 @@
 # Change log
 
+# version 3.0.3
+
+- Fixed `add_guest_host` to create `~/.ssh/known_hosts` when it doesn't exist.
+
 # version 3.0.2
 
 - Fixed assertions for ipv6_ula_prefixes so they can be up to 80 bits even for /64 network for both `cloud_init` and `lxc` roles.
