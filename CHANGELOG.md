@@ -1,5 +1,9 @@
 # Change log
 
+# version 3.0.4
+
+- Fixed issue with `cloud_init` Find PVE node with most free memory.
+
 # version 3.0.3
 
 - Fixed `add_guest_host` to create `~/.ssh/known_hosts` when it doesn't exist.
