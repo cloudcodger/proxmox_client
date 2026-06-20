@@ -1,5 +1,9 @@
 # Change log
 
+# version 3.0.5
+
+- Fixed issue with `lxc` Find PVE node with most free memory.
+
 # version 3.0.4
 
 - Fixed issue with `cloud_init` Find PVE node with most free memory.

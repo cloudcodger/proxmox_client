@@ -17,4 +17,4 @@
     label: "{{ item.node }}: max={{ item.maxmem }} used={{ item.mem }} free={{
       item.maxmem | int - item.mem | int }}"
   when: nodes_idx == 0 or
-    (item.maxmem | int - item.mem | int) >= lxc_creator_node_current_highest_free | default(0)
+    (item.maxmem | int - item.mem | int) >= (lxc_creator_node_current_highest_free | default(0) | int)
